@@ -1,0 +1,20 @@
+{
+  "name": "@taskly/ui",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./tailwind": "./tailwind.config.js"
+  },
+  "scripts": {
+    "lint": "echo 'No lint step for ui package'",
+    "clean": "echo 'Nothing to clean'"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

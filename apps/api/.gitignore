@@ -1,0 +1,71 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+*.env
+*.venv
+
+# Flask instance folder
+instance/
+
+# Flask config and secret files
+config.py
+config/*.py
+config/*.json
+config/*.ini
+config/*.yaml
+
+# Logs and databases
+*.log
+db.sqlite3
+db.sqlite3-journal
+*.db
+*.sqlite
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.iml
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Pip dependencies
+*.egg-info/
+dist/
+build/
+__pypackages__/
+
+# Coverage reports
+htmlcov/
+.coverage
+*.cover
+.cache
+
+# Docker
+*.dockerignore
+docker-compose.override.yml
+
+# Celery task queue
+celerybeat-schedule
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Pytest
+.cache/
+.pytest_cache/
+
+# Migrations
+migrations/
+
+# Gunicorn logs
+gunicorn_error.log
+task/lib/
+task/lib/
+__pycache__/

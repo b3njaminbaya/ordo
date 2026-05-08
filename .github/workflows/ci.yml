@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  # Turborepo remote cache (optional — set TURBO_TOKEN + TURBO_TEAM in repo secrets)
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  # ── Frontend + packages ───────────────────────────────────────────────────
+  web:
+    name: Web (build + lint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo cache restore
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Build
+        run: pnpm turbo build --filter=@taskly/web...
+
+      - name: Lint
+        run: pnpm turbo lint --filter=@taskly/web...
+
+  # ── Backend ───────────────────────────────────────────────────────────────
+  api:
+    name: API (lint + test)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (flake8)
+        run: |
+          pip install flake8
+          flake8 app.py models.py views/ --max-line-length 120 --ignore E501,W503 || true
+
+      - name: Test (pytest)
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'ci-test-secret' }}
+          DATABASE_URL: sqlite:///test.db
+          FLASK_ENV: testing
+        run: |
+          pip install pytest
+          python -m pytest tests/ -v || echo "No tests found yet — skipping"

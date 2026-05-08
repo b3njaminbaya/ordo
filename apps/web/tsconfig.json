@@ -1,0 +1,11 @@
+{
+  "extends": "@taskly/config-tsconfig/react",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@taskly/types": ["../../packages/types/src/index.ts"]
+    }
+  },
+  "include": ["src", "../../packages/types/src"],
+  "exclude": ["node_modules", "dist"]
+}

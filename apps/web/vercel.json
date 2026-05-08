@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@taskly/web",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

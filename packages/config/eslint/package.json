@@ -1,0 +1,25 @@
+{
+  "name": "@taskly/config-eslint",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./react": "./react.js"
+  },
+  "scripts": {
+    "lint": "echo 'config package — nothing to lint'",
+    "clean": "echo 'nothing to clean'"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.19.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "globals": "^15.14.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

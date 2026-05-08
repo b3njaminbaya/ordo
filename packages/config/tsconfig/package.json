@@ -1,0 +1,14 @@
+{
+  "name": "@taskly/config-tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./base":  "./base.json",
+    "./react": "./react.json",
+    "./node":  "./node.json"
+  },
+  "scripts": {
+    "lint": "echo 'config package — nothing to lint'",
+    "clean": "echo 'nothing to clean'"
+  }
+}
