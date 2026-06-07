@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
-import { User, Lock, Bell, Trash2, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { User, Lock, Bell, Trash2, Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import api from "../../api/axios";
 import { Input, Button, Alert } from "../ui";
 
@@ -34,8 +35,15 @@ const passwordSchema = Yup.object({
     .required("Please confirm your new password"),
 });
 
+const THEME_OPTIONS = [
+  { value: "light",  label: "Light",  icon: Sun,     desc: "Always use light theme" },
+  { value: "dark",   label: "Dark",   icon: Moon,    desc: "Always use dark theme" },
+  { value: "system", label: "System", icon: Monitor, desc: "Follow your device setting" },
+];
+
 const Settings = () => {
   const { user, setUser, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -236,6 +244,33 @@ const Settings = () => {
                 </Form>
               )}
             </Formik>
+          </Section>
+        </div>
+
+        {/* Middle row: Appearance */}
+        <div className="mt-5">
+          <Section icon={Monitor} title="Appearance" description="Choose how Taskly looks to you.">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {THEME_OPTIONS.map(({ value, label, icon: Icon, desc }) => {
+                const active = theme === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setTheme(value)}
+                    className={[
+                      "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
+                      active
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:border-primary/40 text-text-muted hover:text-text",
+                    ].join(" ")}
+                  >
+                    <Icon size={22} className={active ? "text-primary" : ""} />
+                    <span className={["text-sm font-semibold", active ? "text-primary" : "text-text"].join(" ")}>{label}</span>
+                    <span className="text-xs text-text-muted">{desc}</span>
+                  </button>
+                );
+              })}
+            </div>
           </Section>
         </div>
 

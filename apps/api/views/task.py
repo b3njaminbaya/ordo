@@ -7,12 +7,33 @@ task_bp = Blueprint("task_bp", __name__)
 
 
 def _get_user():
-    return db.session.get(User, get_jwt_identity())
+    return db.session.get(User, int(get_jwt_identity()))
 
 
 def _user_task_base(user_id):
     """Base query: only tasks belonging to the authenticated user's task lists."""
     return Task.query.join(TaskList, Task.tasklist_id == TaskList.id).filter(TaskList.user_id == user_id)
+
+
+def _task_dict(task):
+    """Serialize a task with its assignee list included."""
+    d = task.to_dict()
+    d["assignees"] = [
+        {"id": a.user_id, "username": a.user.username if a.user else None}
+        for a in task.assignments
+    ]
+    return d
+
+
+def _next_position(user_id, status):
+    """Return max position + 1 for the given status column owned by user."""
+    result = (
+        db.session.query(db.func.max(Task.position))
+        .join(TaskList, Task.tasklist_id == TaskList.id)
+        .filter(TaskList.user_id == user_id, Task.status == status)
+        .scalar()
+    )
+    return (result + 1) if result is not None else 0
 
 
 @task_bp.route("/tasks", methods=["POST"])
@@ -38,12 +59,14 @@ def add_task():
         else:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
 
+    status = data.get("status", "todo")
     task = Task(
         title=data.get("title"),
         description=data.get("description"),
         due_date=due_date,
         priority=data.get("priority", "medium"),
-        status=data.get("status", "todo"),
+        status=status,
+        position=_next_position(tasklist.user_id, status),
         tasklist_id=data["tasklist_id"],
         created_at=datetime.now(timezone.utc),
     )
@@ -53,9 +76,9 @@ def add_task():
     # Real-time: broadcast new task to workspace members
     if user.workspace_id:
         from views.realtime import emit_task_created
-        emit_task_created(user.workspace_id, task.to_dict())
+        emit_task_created(user.workspace_id, _task_dict(task))
 
-    return jsonify(task.to_dict()), 201
+    return jsonify(_task_dict(task)), 201
 
 
 @task_bp.route("/tasks", methods=["GET"])
@@ -77,8 +100,20 @@ def get_tasks():
             query = query.filter(db.func.date(Task.due_date) == due)
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    if q := request.args.get("q", "").strip():
+        query = query.filter(
+            db.or_(Task.title.ilike(f"%{q}%"), Task.description.ilike(f"%{q}%"))
+        )
+    if assignee_id := request.args.get("assignee_id"):
+        try:
+            query = query.join(TaskAssignment, Task.id == TaskAssignment.task_id).filter(
+                TaskAssignment.user_id == int(assignee_id)
+            )
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid assignee_id"}), 400
 
-    return jsonify([t.to_dict() for t in query.all()]), 200
+    tasks = query.order_by(Task.position.asc(), Task.created_at.asc()).all()
+    return jsonify([_task_dict(t) for t in tasks]), 200
 
 
 @task_bp.route("/tasks/calendar", methods=["GET"])
@@ -109,6 +144,43 @@ def get_calendar_tasks():
     return jsonify([t.to_dict() for t in tasks]), 200
 
 
+@task_bp.route("/tasks/reorder", methods=["PATCH"])
+@jwt_required()
+def reorder_tasks():
+    """Atomically reorder tasks within a column by assigning sequential positions."""
+    user = _get_user()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json()
+    status = data.get("status")
+    order = data.get("order")
+
+    if not status or not isinstance(order, list):
+        return jsonify({"error": "status and order[] are required"}), 400
+
+    if not order:
+        return jsonify({"message": "No tasks to reorder"}), 200
+
+    # Load all user tasks for this status in one query
+    tasks_by_id = {
+        t.id: t
+        for t in _user_task_base(user.id).filter(Task.status == status).all()
+    }
+
+    # Validate every ID in order belongs to the user and has this status
+    for task_id in order:
+        if task_id not in tasks_by_id:
+            return jsonify({"error": f"Task {task_id} not found or not accessible"}), 403
+
+    # Assign positions atomically within the transaction
+    for position, task_id in enumerate(order):
+        tasks_by_id[task_id].position = position
+
+    db.session.commit()
+    return jsonify({"message": "Reordered", "count": len(order)}), 200
+
+
 @task_bp.route("/tasks/<int:task_id>", methods=["PATCH"])
 @jwt_required()
 def update_task(task_id):
@@ -122,7 +194,13 @@ def update_task(task_id):
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
-    for field in ("status", "title", "description", "priority"):
+
+    # When status changes, move task to the end of the destination column
+    if "status" in data and data["status"] != task.status:
+        task.status = data["status"]
+        task.position = _next_position(task.tasklist.user_id, data["status"])
+
+    for field in ("title", "description", "priority"):
         if field in data:
             setattr(task, field, data[field])
     if "due_date" in data:
@@ -138,9 +216,9 @@ def update_task(task_id):
     # Real-time: broadcast update to workspace
     if user.workspace_id:
         from views.realtime import emit_task_updated
-        emit_task_updated(user.workspace_id, task.to_dict())
+        emit_task_updated(user.workspace_id, _task_dict(task))
 
-    return jsonify(task.to_dict()), 200
+    return jsonify(_task_dict(task)), 200
 
 
 @task_bp.route("/tasks/<int:task_id>", methods=["DELETE"])

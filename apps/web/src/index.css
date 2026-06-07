@@ -4,6 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design token CSS custom properties ───────────────────────────────────── */
+/* Light mode (default) */
+:root {
+  --color-page:          #F9FAFB;
+  --color-surface:       #FFFFFF;
+  --color-surface-muted: #F3F4F6;
+  --color-border:        #E5E7EB;
+  --color-text:          #111827;
+  --color-text-muted:    #6B7280;
+  --color-text-inverse:  #F9FAFB;
+  --color-sidebar:       #111827;
+}
+
+/* Dark mode — applied when <html class="dark"> */
+.dark {
+  --color-page:          #0F172A;
+  --color-surface:       #1E293B;
+  --color-surface-muted: #172334;
+  --color-border:        #2D4060;
+  --color-text:          #F1F5F9;
+  --color-text-muted:    #94A3B8;
+  --color-text-inverse:  #0F172A;
+  --color-sidebar:       #090E1A;
+}
+
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -27,7 +52,7 @@
   /* ── Scrollbars ─────────────────────────────── */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #E5E7EB transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar       { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }

@@ -7,3 +7,5 @@ from .task import *
 from .notifications import *
 from .taskstats import *
 from .subtasks import subtasks_bp
+from .attachments import attachments_bp
+from .recurring import recurring_bp

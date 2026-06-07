@@ -51,3 +51,11 @@ def emit_task_deleted(workspace_id, task_id):
 
 def emit_comment_added(workspace_id, comment_dict):
     socketio.emit("comment_added", comment_dict, room=f"workspace_{workspace_id}")
+
+
+def emit_comment_updated(workspace_id, comment_dict):
+    socketio.emit("comment_updated", comment_dict, room=f"workspace_{workspace_id}")
+
+
+def emit_comment_deleted(workspace_id, task_id, comment_id):
+    socketio.emit("comment_deleted", {"task_id": task_id, "comment_id": comment_id}, room=f"workspace_{workspace_id}")

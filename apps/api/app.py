@@ -105,7 +105,7 @@ jwt = JWTManager(app)
 from views import (
     user_bp, auth_bp, tasklist_bp, task_bp,
     task_assignment_bp, comments_bp, notifications_bp, task_stats_bp,
-    subtasks_bp,
+    subtasks_bp, attachments_bp, recurring_bp,
 )
 import views.realtime  # registers Socket.IO event handlers
 
@@ -118,6 +118,8 @@ app.register_blueprint(comments_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(task_stats_bp)
 app.register_blueprint(subtasks_bp)
+app.register_blueprint(attachments_bp)
+app.register_blueprint(recurring_bp)
 
 
 @jwt.token_in_blocklist_loader
@@ -135,21 +137,45 @@ def index():
 def _start_scheduler():
     from apscheduler.schedulers.background import BackgroundScheduler
     from views.notifications import check_task_deadlines
+    from views.recurring import spawn_recurring_tasks
 
-    def _run():
+    check_interval_hours = int(os.getenv("DEADLINE_CHECK_INTERVAL_HOURS", 1))
+
+    def _run_deadline():
         with app.app_context():
             check_task_deadlines()
-            logger.info("deadline_check_complete")
+
+    def _run_recurring():
+        with app.app_context():
+            spawn_recurring_tasks()
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(_run, trigger="interval", hours=1, id="deadline_check", replace_existing=True)
+    scheduler.add_job(
+        _run_deadline,
+        trigger="interval",
+        hours=check_interval_hours,
+        id="deadline_check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _run_recurring,
+        trigger="interval",
+        hours=1,
+        id="recurring_spawn",
+        replace_existing=True,
+    )
     scheduler.start()
-    logger.info("scheduler_started", job="deadline_check", interval_hours=1)
+    logger.info("scheduler_started", jobs=["deadline_check", "recurring_spawn"])
     return scheduler
 
 
-if __name__ == "__main__":
+# Start the scheduler once at import time.
+# Guard against the Werkzeug reloader forking a second process in debug mode.
+if not os.environ.get("WERKZEUG_RUN_MAIN"):
     _start_scheduler()
+
+
+if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     socketio.run(
         app,

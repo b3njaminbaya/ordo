@@ -106,7 +106,7 @@ const TaskList = () => {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex flex-col w-72 min-w-[18rem] max-h-[calc(100vh-7rem)] bg-white rounded-xl shadow-card border border-border"
+                className="flex flex-col w-72 min-w-[18rem] max-h-[calc(100vh-7rem)] bg-surface rounded-xl shadow-card border border-border"
               >
                 {/* Column header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">

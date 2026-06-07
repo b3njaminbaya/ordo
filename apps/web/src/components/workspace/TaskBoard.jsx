@@ -1,9 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
-import { X, Plus, Trash2, CheckCircle2, Circle } from "lucide-react";
+import { X, Plus, Trash2, CheckCircle2, Circle, Pencil, MessageSquare, Paperclip } from "lucide-react";
 import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 import { Button, Spinner, Textarea, Input, PriorityBadge } from "../ui";
+import TaskAttachments from "./TaskAttachments";
+import { socket } from "../../socket";
+
+function formatRelTime(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 const TaskBoard = ({ task, onEditTask }) => {
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({ ...task });
@@ -11,9 +28,14 @@ const TaskBoard = ({ task, onEditTask }) => {
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [savingComment, setSavingComment] = useState(false);
-  const [subtasks, setSubtasks] = useState([]);
-  const [newSubtask, setNewSubtask] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
+  const [subtasks, setSubtasks]         = useState([]);
+  const [newSubtask, setNewSubtask]     = useState("");
   const [addingSubtask, setAddingSubtask] = useState(false);
+  const [attachmentCount, setAttachmentCount] = useState(0);
 
   const fetchComments = useCallback(async () => {
     setLoadingComments(true);
@@ -43,6 +65,37 @@ const TaskBoard = ({ task, onEditTask }) => {
     }
   }, [isExpanded, fetchComments, fetchSubtasks]);
 
+  // Live comments via Socket.IO when the task detail is open
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const onCommentAdded = (data) => {
+      if (data.task_id !== task.id) return;
+      setComments((prev) => {
+        if (prev.some((c) => c.id === data.id)) return prev; // dedup own post
+        return [...prev, data];
+      });
+    };
+    const onCommentUpdated = (data) => {
+      if (data.task_id !== task.id) return;
+      setComments((prev) => prev.map((c) => (c.id === data.id ? { ...c, content: data.content } : c)));
+    };
+    const onCommentDeleted = ({ task_id, comment_id }) => {
+      if (task_id !== task.id) return;
+      setComments((prev) => prev.filter((c) => c.id !== comment_id));
+    };
+
+    socket.on("comment_added",   onCommentAdded);
+    socket.on("comment_updated", onCommentUpdated);
+    socket.on("comment_deleted", onCommentDeleted);
+
+    return () => {
+      socket.off("comment_added",   onCommentAdded);
+      socket.off("comment_updated", onCommentUpdated);
+      socket.off("comment_deleted", onCommentDeleted);
+    };
+  }, [isExpanded, task.id]);
+
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") { setIsExpanded(false); setIsEditing(false); }
@@ -63,6 +116,44 @@ const TaskBoard = ({ task, onEditTask }) => {
       // non-fatal
     } finally {
       setSavingComment(false);
+    }
+  };
+
+  const handleStartEditComment = (c) => {
+    setEditingCommentId(c.id);
+    setEditCommentContent(c.content);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentContent("");
+  };
+
+  const handleSaveEditComment = async (commentId) => {
+    const content = editCommentContent.trim();
+    if (!content) return;
+    setSavingEdit(true);
+    try {
+      const res = await api.patch(`/comments/${commentId}`, { content });
+      setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, content: res.data.content } : c)));
+      setEditingCommentId(null);
+      setEditCommentContent("");
+    } catch {
+      // non-fatal
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    setDeletingCommentId(commentId);
+    try {
+      await api.delete(`/comments/${commentId}`);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch {
+      // non-fatal
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
@@ -126,7 +217,7 @@ const TaskBoard = ({ task, onEditTask }) => {
       {/* Kanban card */}
       <div
         onClick={() => setIsExpanded(true)}
-        className="cursor-pointer p-3 bg-white rounded-lg shadow-card border border-border hover:border-primary/40 transition-colors"
+        className="cursor-pointer p-3 bg-surface rounded-lg shadow-card border border-border hover:border-primary/40 transition-colors"
       >
         <p className="text-sm font-semibold text-text leading-snug">{task.title}</p>
         {task.priority && (
@@ -138,6 +229,12 @@ const TaskBoard = ({ task, onEditTask }) => {
           <p className="mt-1.5 text-xs text-text-muted">
             {completedSubtasks}/{subtasks.length} subtasks
           </p>
+        )}
+        {attachmentCount > 0 && (
+          <div className="mt-1.5 flex items-center gap-1 text-xs text-text-muted">
+            <Paperclip size={11} />
+            {attachmentCount}
+          </div>
         )}
       </div>
 
@@ -259,42 +356,137 @@ const TaskBoard = ({ task, onEditTask }) => {
                 </div>
               </div>
 
+              {/* Attachments */}
+              <TaskAttachments
+                taskId={task.id}
+                taskOwnerId={task.tasklist?.user_id}
+                onCountChange={setAttachmentCount}
+              />
+
               {/* Comments */}
               <div>
-                <h3 className="text-sm font-semibold text-text mb-2">Comments</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageSquare size={14} className="text-text-muted" />
+                  <h3 className="text-sm font-semibold text-text">
+                    Comments
+                    {comments.length > 0 && (
+                      <span className="ml-1.5 text-xs font-normal text-text-muted">({comments.length})</span>
+                    )}
+                  </h3>
+                </div>
+
                 {loadingComments ? (
-                  <Spinner size="sm" className="text-primary" />
+                  <div className="flex justify-center py-4">
+                    <Spinner size="sm" className="text-primary" />
+                  </div>
                 ) : (
                   <ul className="space-y-2 mb-3">
                     {comments.length === 0 && (
-                      <li className="text-sm text-text-muted">No comments yet.</li>
-                    )}
-                    {comments.map((c) => (
-                      <li key={c.id} className="px-3 py-2 bg-surface-muted rounded text-sm border border-border">
-                        <p className="text-text">{c.content}</p>
-                        {c.username && <p className="text-xs text-text-muted mt-0.5">{c.username}</p>}
+                      <li className="text-sm text-text-muted py-2 text-center">
+                        No comments yet. Be the first to comment.
                       </li>
-                    ))}
+                    )}
+                    {comments.map((c) => {
+                      const isOwn = user?.id === c.user_id;
+                      const isDeleting = deletingCommentId === c.id;
+                      const isEditingThis = editingCommentId === c.id;
+
+                      return (
+                        <li key={c.id} className="group">
+                          {isEditingThis ? (
+                            <div className="space-y-2 px-3 py-2.5 bg-surface-muted rounded-lg border border-primary/40">
+                              <textarea
+                                className="w-full px-0 py-0 text-sm text-text bg-transparent border-none focus:outline-none resize-none"
+                                rows={2}
+                                value={editCommentContent}
+                                onChange={(e) => setEditCommentContent(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEditComment(c.id); }
+                                  if (e.key === "Escape") handleCancelEditComment();
+                                }}
+                                autoFocus
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <Button size="sm" variant="ghost" onClick={handleCancelEditComment} disabled={savingEdit}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEditComment(c.id)}
+                                  loading={savingEdit}
+                                  disabled={!editCommentContent.trim()}
+                                >
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={`px-3 py-2.5 bg-surface-muted rounded-lg border border-border transition-opacity ${isDeleting ? "opacity-40" : ""}`}>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex-shrink-0">
+                                    {(c.username || "?").charAt(0).toUpperCase()}
+                                  </span>
+                                  <span className="text-xs font-semibold text-text truncate">{c.username || "Unknown"}</span>
+                                  {c.created_at && (
+                                    <span className="text-xs text-text-muted flex-shrink-0">{formatRelTime(c.created_at)}</span>
+                                  )}
+                                </div>
+                                {isOwn && !isDeleting && (
+                                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                    <button
+                                      onClick={() => handleStartEditComment(c)}
+                                      className="p-1 rounded text-text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+                                      aria-label="Edit comment"
+                                    >
+                                      <Pencil size={12} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteComment(c.id)}
+                                      className="p-1 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                                      aria-label="Delete comment"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm text-text mt-1.5 ml-8 leading-relaxed">{c.content}</p>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className="flex-1 px-3 py-2 rounded border border-border text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-text-muted"
-                    placeholder="Add a comment…"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
-                    disabled={savingComment}
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleAddComment}
-                    disabled={savingComment || !newComment.trim()}
-                    loading={savingComment}
-                  >
-                    Post
-                  </Button>
+
+                {/* New comment input */}
+                <div className="flex gap-2 items-start">
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 text-primary text-xs font-bold flex-shrink-0 mt-1">
+                    {(user?.username || "?").charAt(0).toUpperCase()}
+                  </span>
+                  <div className="flex-1 flex gap-2">
+                    <textarea
+                      className="flex-1 px-3 py-2 rounded-lg border border-border text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary placeholder:text-text-muted resize-none transition-colors"
+                      placeholder="Write a comment…"
+                      rows={1}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); }
+                      }}
+                      disabled={savingComment}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAddComment}
+                      disabled={savingComment || !newComment.trim()}
+                      loading={savingComment}
+                      className="self-end"
+                    >
+                      Post
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

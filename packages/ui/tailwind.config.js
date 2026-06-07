@@ -4,6 +4,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Semantic surface / text / border tokens — resolved at runtime via CSS variables
+        // so dark mode works by swapping the variables in .dark { ... }
+        page:    "var(--color-page)",
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          muted:   "var(--color-surface-muted)",
+        },
+        border:  "var(--color-border)",
+        text: {
+          DEFAULT: "var(--color-text)",
+          muted:   "var(--color-text-muted)",
+          inverse: "var(--color-text-inverse)",
+        },
+        sidebar: "var(--color-sidebar)",
+
+        // Brand / semantic colors — constant across themes
         primary: {
           DEFAULT: "#6366F1",
           hover:   "#4F46E5",
@@ -25,18 +41,6 @@ module.exports = {
           dark:    "#991B1B",
           light:   "#FEF2F2",
         },
-        page:    "#F9FAFB",
-        surface: {
-          DEFAULT: "#FFFFFF",
-          muted:   "#F3F4F6",
-        },
-        border:  "#E5E7EB",
-        text: {
-          DEFAULT: "#111827",
-          muted:   "#6B7280",
-          inverse: "#F9FAFB",
-        },
-        sidebar: "#111827",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

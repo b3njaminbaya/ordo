@@ -10,13 +10,14 @@ def _serialize_comment(c):
         "content": c.content,
         "user_id": c.user_id,
         "username": c.user.username if c.user else None,
+        "created_at": c.created_at.isoformat() if c.created_at else None,
     }
 
 @comments_bp.route("/tasks/<int:task_id>/comments", methods=["POST"])
 @jwt_required()
 def add_comment(task_id):
     data = request.get_json()
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     content = data.get("content", "").strip()
 
     task = db.session.get(Task, task_id)
@@ -54,7 +55,7 @@ def get_comments(task_id):
 @jwt_required()
 def update_comment(comment_id):
     data = request.get_json()
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     comment = db.session.get(Comment, comment_id)
     if not comment:
@@ -66,14 +67,19 @@ def update_comment(comment_id):
     if "content" in data and data["content"].strip():
         comment.content = data["content"]
         db.session.commit()
-        return jsonify(_serialize_comment(comment)), 200
+        serialized = _serialize_comment(comment)
+        user = db.session.get(User, user_id)
+        if user and user.workspace_id:
+            from views.realtime import emit_comment_updated
+            emit_comment_updated(user.workspace_id, {**serialized, "task_id": comment.task_id})
+        return jsonify(serialized), 200
 
     return jsonify({"error": "No valid content provided"}), 400
 
 @comments_bp.route("/comments/<int:comment_id>", methods=["DELETE"])
 @jwt_required()
 def delete_comment(comment_id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
     comment = db.session.get(Comment, comment_id)
     if not comment:
@@ -82,7 +88,13 @@ def delete_comment(comment_id):
     if comment.user_id != user_id:
         return jsonify({"error": "Unauthorized to delete this comment"}), 403
 
+    task_id = comment.task_id
     db.session.delete(comment)
     db.session.commit()
+
+    user = db.session.get(User, user_id)
+    if user and user.workspace_id:
+        from views.realtime import emit_comment_deleted
+        emit_comment_deleted(user.workspace_id, task_id, comment_id)
 
     return jsonify({"message": "Comment deleted successfully"}), 200
