@@ -3,8 +3,8 @@ services:
     name: taskly-api
     runtime: python
     rootDir: apps/api
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app -k gevent --workers 2 --bind 0.0.0.0:$PORT --timeout 120
+    buildCommand: pip install -r requirements.txt && flask db upgrade
+    startCommand: gunicorn app:app -k gevent --workers 1 --bind 0.0.0.0:$PORT --timeout 120
     envVars:
       - key: JWT_SECRET_KEY
         sync: false
@@ -21,6 +21,8 @@ services:
       - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_DEFAULT_SENDER
         sync: false
       - key: FLASK_ENV
         value: production
