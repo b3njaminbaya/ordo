@@ -173,17 +173,23 @@ def forgot_password():
     email = data.get("email")
 
     user = User.query.filter_by(email=email).first()
+    # Always return 200 to prevent email enumeration
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "If that email is registered, a reset link has been sent"}), 200
 
     raw_token = str(uuid.uuid4())
     user.reset_token = _hash_token(raw_token)
     user.token_expiry = datetime.now(timezone.utc) + timedelta(hours=1)
     db.session.commit()
 
-    send_reset_email(user, raw_token)
-    logger.info("password_reset_requested", user_id=user.id)
-    return jsonify({"message": "Password reset link sent to your email"}), 200
+    try:
+        send_reset_email(user, raw_token)
+        logger.info("password_reset_requested", user_id=user.id)
+    except Exception as e:
+        logger.error("password_reset_email_failed", user_id=user.id, error=str(e))
+        return jsonify({"error": "Failed to send reset email. Please try again later."}), 500
+
+    return jsonify({"message": "If that email is registered, a reset link has been sent"}), 200
 
 
 @auth_bp.route("/reset-password/<token>", methods=["POST"])
