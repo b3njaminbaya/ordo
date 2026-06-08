@@ -49,10 +49,8 @@ from extensions import limiter
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
-ALLOWED_ORIGINS = [
-    "https://taskly-app-iota.vercel.app",
-    "http://localhost:5173",
-]
+_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+ALLOWED_ORIGINS = list({_frontend_url, "http://localhost:5173"})
 
 CORS(
     app,
