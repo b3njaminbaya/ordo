@@ -70,10 +70,13 @@ const Services = () => {
     <div className="bg-page text-text">
 
       {/* Hero */}
-      <section className="bg-sidebar py-24 px-4 sm:px-6 text-center">
-        <motion.div {...fadeUp()} className="max-w-3xl mx-auto">
-          <span className="text-xs font-bold uppercase tracking-widest text-primary">What we offer</span>
-          <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white leading-tight">
+      <section className="relative bg-sidebar py-28 px-4 sm:px-6 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-page to-transparent pointer-events-none" />
+        <motion.div {...fadeUp()} className="max-w-3xl mx-auto relative z-10">
+          <span className="inline-block px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-bold uppercase tracking-widest mb-4">What we offer</span>
+          <h1 className="mt-2 text-4xl sm:text-5xl font-extrabold text-white leading-tight">
             Everything you need to<br />manage work well.
           </h1>
           <p className="mt-5 text-lg text-white/70 leading-relaxed">

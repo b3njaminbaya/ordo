@@ -38,17 +38,62 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-page flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-page flex">
+      {/* Left branding panel — hidden on mobile */}
+      <div className="hidden lg:flex lg:w-5/12 bg-sidebar flex-col justify-between p-10 relative overflow-hidden flex-shrink-0">
+        {/* Decorative ring */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
+
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 relative z-10">
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg shadow">T</div>
+          <span className="text-white font-bold text-xl tracking-tight">Taskly</span>
+        </div>
+
+        {/* Tagline */}
+        <div className="relative z-10">
+          <h2 className="text-3xl font-extrabold text-white leading-snug">
+            Your team's work,<br />
+            <span className="text-primary">finally organized.</span>
+          </h2>
+          <p className="mt-4 text-white/60 text-sm leading-relaxed">
+            Join teams already using Taskly to ship faster, stay aligned, and stress less.
+          </p>
+          <ul className="mt-6 space-y-3">
+            {[
+              "Kanban boards with real-time drag & drop",
+              "Smart deadline notifications",
+              "Velocity analytics for your whole team",
+              "Free forever — no credit card needed",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2.5 text-sm text-white/70">
+                <span className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="text-xs text-white/30 relative z-10">&copy; {new Date().getFullYear()} Taskly</p>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-8">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-surface rounded-2xl shadow-card border border-border p-8">
-          {/* Brand */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-3">
-              <span className="text-white font-bold">T</span>
+          {/* Brand — only shown on mobile (branding panel hidden) */}
+          <div className="flex flex-col items-center mb-8 lg:items-start">
+            <div className="flex items-center gap-2 mb-3 lg:mb-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center lg:hidden">
+                <span className="text-white font-bold text-sm">T</span>
+              </div>
+              <h1 className="text-2xl font-bold text-text">Create your account</h1>
             </div>
-            <h1 className="text-2xl font-bold text-text">Create your account</h1>
-            <p className="text-sm text-text-muted mt-1">Start managing tasks for free</p>
+            <p className="text-sm text-text-muted">Start managing tasks for free</p>
           </div>
 
           <Formik
@@ -191,6 +236,8 @@ const Signup = () => {
           </Formik>
         </div>
 
+      </div>
+      </div>
       </div>
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}

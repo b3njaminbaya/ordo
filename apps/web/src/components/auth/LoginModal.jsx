@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { X, LogIn } from "lucide-react";
+import { X, LogIn, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button, Alert } from "../ui";
 
 const LoginModal = ({ onClose }) => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const goTo = (path) => {
     if (onClose) onClose();
@@ -91,13 +93,23 @@ const LoginModal = ({ onClose }) => {
                       Forgot password?
                     </button>
                   </div>
-                  <Field
-                    type="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className="w-full px-4 py-2.5 border border-border rounded-lg text-sm text-text bg-page placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
-                  />
+                  <div className="relative">
+                    <Field
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-text bg-page placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                   <ErrorMessage name="password" component="p" className="text-danger text-xs mt-1" />
                 </div>
 

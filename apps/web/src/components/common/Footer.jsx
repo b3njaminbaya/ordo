@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { Mail, CheckCircle2 } from "lucide-react";
 
 const NAV = [
   { label: "Home",       to: "/" },
@@ -15,7 +16,10 @@ const LEGAL = [
   { label: "Accessibility",      to: "/accessibility" },
 ];
 
-const Footer = () => (
+const Footer = () => {
+  const [subscribed, setSubscribed] = useState(false);
+
+  return (
   <footer className="bg-sidebar text-white">
     {/* Newsletter strip */}
     <div className="border-b border-white/10">
@@ -24,20 +28,27 @@ const Footer = () => (
           <p className="text-base font-semibold">Stay in the loop</p>
           <p className="text-sm text-white/60 mt-0.5">Get product updates and tips directly to your inbox.</p>
         </div>
-        <form onSubmit={(e) => e.preventDefault()} className="flex w-full md:w-auto gap-0">
-          <input
-            type="email"
-            placeholder="you@example.com"
-            className="px-4 py-2.5 rounded-l-lg text-sm text-text bg-white w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label="Email for newsletter"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2.5 rounded-r-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
-          >
-            Subscribe
-          </button>
-        </form>
+        {subscribed ? (
+          <div className="flex items-center gap-2 text-sm font-medium text-success bg-success/10 border border-success/20 rounded-lg px-4 py-2.5">
+            <CheckCircle2 size={16} /> You&apos;re subscribed — thanks!
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }} className="flex w-full md:w-auto gap-0">
+            <input
+              type="email"
+              required
+              placeholder="you@example.com"
+              className="px-4 py-2.5 rounded-l-lg text-sm text-text bg-white w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="Email for newsletter"
+            />
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-r-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
+            >
+              Subscribe
+            </button>
+          </form>
+        )}
       </div>
     </div>
 
@@ -106,6 +117,7 @@ const Footer = () => (
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;

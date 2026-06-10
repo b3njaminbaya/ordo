@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckSquare, Bell, BarChart2, Shield, Users, Rocket,
-  ArrowRight, Star, Zap, Calendar, Kanban, CheckCircle2
+  ArrowRight, Star, Zap, Calendar, Kanban, CheckCircle2,
+  RefreshCw, Lock,
 } from "lucide-react";
 import { Button } from "../components/ui";
 import HeroImage from "../assets/Hero.jpg";
@@ -16,6 +17,13 @@ const FEATURES = [
   { Icon: Bell,        title: "Smart Notifications",  desc: "Get real-time alerts when tasks are updated or deadlines are approaching — so nothing slips through." },
   { Icon: BarChart2,   title: "Velocity Analytics",   desc: "Track your team's completion rate week by week. Identify bottlenecks and improve delivery speed." },
   { Icon: Users,       title: "Team Collaboration",   desc: "Invite teammates, assign tasks, and work in shared workspaces with live updates via Socket.IO." },
+];
+
+const STATS = [
+  { icon: CheckSquare, value: "10,000+", label: "Tasks organized" },
+  { icon: Users,       value: "500+",    label: "Teams onboarded" },
+  { icon: RefreshCw,   value: "Real-time", label: "Live collaboration" },
+  { icon: Lock,        value: "Secure",  label: "JWT + bcrypt auth" },
 ];
 
 const STEPS = [
@@ -78,7 +86,7 @@ const LandingPage = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => navigate("/about")}
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
               className="border-white/30 text-white hover:bg-white/10"
             >
               See how it works
@@ -103,8 +111,27 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ── Stats strip ───────────────────────────────── */}
+      <section className="py-10 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+          {STATS.map(({ icon: Icon, value, label }, i) => (
+            <motion.div
+              key={label}
+              className="flex flex-col items-center gap-2 text-center"
+              {...fadeUp(i * 0.08)}
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Icon size={20} className="text-primary" />
+              </div>
+              <p className="text-2xl font-black text-text">{value}</p>
+              <p className="text-xs text-text-muted font-medium">{label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* ── How it works ──────────────────────────────── */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">How it works</span>

@@ -33,8 +33,10 @@ const Navbar = ({ onLogin }) => {
 
   return (
     <header
-      className={`sticky top-0 z-40 bg-surface transition-shadow duration-200 ${
-        scrolled ? "shadow-card" : "border-b border-border"
+      className={`sticky top-0 z-40 transition-all duration-200 ${
+        scrolled
+          ? "bg-surface/90 backdrop-blur-md shadow-card"
+          : "bg-surface border-b border-border"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
