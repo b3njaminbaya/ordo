@@ -24,6 +24,10 @@ const TaskBoard = ({ task, onEditTask }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState({ ...task });
+  const [selectedAssignee, setSelectedAssignee] = useState(
+    task.assignments?.[0]?.user_id?.toString() || ""
+  );
+  const [members, setMembers] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
@@ -62,8 +66,13 @@ const TaskBoard = ({ task, onEditTask }) => {
     if (isExpanded) {
       fetchComments();
       fetchSubtasks();
+      if (user?.workspace_id) {
+        api.get(`/workspace/${user.workspace_id}/members`)
+          .then((res) => setMembers(res.data.members || []))
+          .catch(() => {});
+      }
     }
-  }, [isExpanded, fetchComments, fetchSubtasks]);
+  }, [isExpanded, fetchComments, fetchSubtasks, user?.workspace_id]);
 
   // Live comments via Socket.IO when the task detail is open
   useEffect(() => {
@@ -165,6 +174,16 @@ const TaskBoard = ({ task, onEditTask }) => {
         priority: editedTask.priority,
         due_date: editedTask.due_date,
       });
+
+      const currentAssigneeId = task.assignments?.[0]?.user_id?.toString() || "";
+      if (selectedAssignee !== currentAssigneeId) {
+        if (selectedAssignee) {
+          await api.post(`/tasks/${task.id}/assign`, { user_ids: [Number(selectedAssignee)] });
+        } else if (currentAssigneeId) {
+          await api.delete(`/tasks/${task.id}/assign/${currentAssigneeId}`);
+        }
+      }
+
       if (onEditTask) onEditTask(res.data);
     } catch {
       // non-fatal
@@ -295,6 +314,21 @@ const TaskBoard = ({ task, onEditTask }) => {
                     value={editedTask.due_date?.split("T")[0] || ""}
                     onChange={(e) => setEditedTask({ ...editedTask, due_date: e.target.value })}
                   />
+                  <div>
+                    <label className="text-sm font-medium text-text block mb-1">Assignee</label>
+                    <select
+                      className="w-full px-3 py-2 rounded border border-border text-sm text-text bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                      value={selectedAssignee}
+                      onChange={(e) => setSelectedAssignee(e.target.value)}
+                    >
+                      <option value="">None</option>
+                      {members.map((m) => (
+                        <option key={m.id} value={m.id.toString()}>
+                          {m.username} ({m.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </>
               ) : (
                 <>
