@@ -61,9 +61,6 @@ celerybeat-schedule
 .cache/
 .pytest_cache/
 
-# Migrations
-migrations/
-
 # Gunicorn logs
 gunicorn_error.log
 task/lib/
