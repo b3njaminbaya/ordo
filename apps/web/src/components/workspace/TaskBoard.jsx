@@ -299,10 +299,18 @@ const TaskBoard = ({ task, onEditTask }) => {
               ) : (
                 <>
                   <p className="text-sm text-text">{task.description || "No description."}</p>
-                  <div className="flex gap-4 text-sm text-text-muted">
+                  <div className="flex flex-wrap gap-4 text-sm text-text-muted">
                     <span>Priority: <span className="font-medium text-text capitalize">{task.priority}</span></span>
                     <span>Due: <span className="font-medium text-text">{task.due_date ? new Date(task.due_date).toLocaleDateString() : "No deadline"}</span></span>
                   </div>
+                  {task.assignments?.length > 0 && (
+                    <div className="text-sm text-text-muted">
+                      Assigned to:{" "}
+                      <span className="font-medium text-text">
+                        {task.assignments.map((a) => a.username).join(", ")}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 

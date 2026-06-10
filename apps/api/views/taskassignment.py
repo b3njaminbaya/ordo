@@ -37,6 +37,9 @@ def assign_users_to_task(task_id):
     if not user_ids:
         return jsonify({"success": "No users assigned (Task remains unassigned)"}), 200
 
+    assigner = db.session.get(User, current_user_id)
+    assigner_name = assigner.username if assigner else "Someone"
+
     assigned_users = []
     for user_id in user_ids:
         user = db.session.get(User, user_id)
@@ -55,7 +58,7 @@ def assign_users_to_task(task_id):
             "email": user.email
         })
 
-        notification = Notification(user_id=user.id, task_id=task.id, message=f"You have been assigned to task: {task.title}")
+        notification = Notification(user_id=user.id, task_id=task.id, message=f"{assigner_name} assigned you to task: {task.title}")
         db.session.add(notification)
 
     db.session.commit()

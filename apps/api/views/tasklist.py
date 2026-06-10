@@ -5,24 +5,41 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 tasklist_bp = Blueprint('tasklist', __name__, url_prefix='/tasklists')
 
+
+def _serialize_task(task):
+    return {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "priority": task.priority,
+        "status": task.status,
+        "position": task.position,
+        "assignments": [
+            {"user_id": a.user_id, "username": a.user.username if a.user else "Unknown"}
+            for a in task.assignments
+        ],
+    }
+
+
 @tasklist_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_all_tasklist():
     user_id = get_jwt_identity()
-    page = request.args.get("page", 1, type=int)  
-    per_page = request.args.get("per_page", 5, type=int) 
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 5, type=int)
     tasklist = TaskList.query.filter_by(user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
 
     if not tasklist.items:
         return jsonify({"error": "Task list not found"}), 404
-    
+
     return jsonify([
         {
-            "id": tasklist.id, 
-            "name": tasklist.name,
-            "tasks": [{"id": task.id, "title": task.title} for task in tasklist.tasks]
-        } 
-        for tasklist in tasklist.items
+            "id": tl.id,
+            "name": tl.name,
+            "tasks": [_serialize_task(t) for t in tl.tasks],
+        }
+        for tl in tasklist.items
     ]), 200
 
 
@@ -36,9 +53,9 @@ def get_tasklist(tasklist_id):
         return jsonify({"error": "Task list not found"}), 404
 
     return jsonify({
-        "id": tasklist.id, 
+        "id": tasklist.id,
         "name": tasklist.name,
-        "tasks": [{"id": task.id, "title": task.title} for task in tasklist.tasks]
+        "tasks": [_serialize_task(t) for t in tasklist.tasks],
     }), 200
 
 
@@ -51,8 +68,8 @@ def get_tasklist_templates():
         {
             "id": template.id,
             "name": template.name,
-            "tasks": [{"id": task.id, "title": task.title} for task in template.tasks]
-        } 
+            "tasks": [_serialize_task(t) for t in template.tasks],
+        }
         for template in templates
     ]), 200
 
