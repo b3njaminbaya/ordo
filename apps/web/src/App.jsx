@@ -16,6 +16,7 @@ import LoginModal from "./components/auth/LoginModal.jsx";
 import ForgotPassword from "./components/auth/ForgotPassword.jsx";
 import ResetPassword from "./components/auth/ResetPassword.jsx";
 import VerifyEmail from "./components/auth/VerifyEmail.jsx";
+import AcceptInvite from "./components/auth/AcceptInvite.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import TermsAndConditions from "./pages/TermsAndConditions.jsx";
 import Accessibility from "./pages/Accessibility.jsx";
@@ -70,6 +71,7 @@ function MainLayout({ isLoginModalOpen, setIsLoginModalOpen }) {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/invite/:token" element={<AcceptInvite />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/accessibility" element={<Accessibility />} />

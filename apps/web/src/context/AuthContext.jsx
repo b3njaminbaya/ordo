@@ -27,6 +27,17 @@ export function AuthProvider({ children }) {
     checkSession();
   }, []);
 
+  const _acceptPendingInvite = async () => {
+    const token = sessionStorage.getItem("pendingInviteToken");
+    if (!token) return;
+    sessionStorage.removeItem("pendingInviteToken");
+    try {
+      await api.post(`/invite/accept/${token}`);
+    } catch {
+      // Non-fatal — user still lands in workspace; invite may have already been used
+    }
+  };
+
   const register = async (userData) => {
     try {
       const response = await api.post("/register/", userData);
@@ -35,6 +46,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("refresh_token", response.data.refresh_token);
       }
       setUser(response.data.user);
+      await _acceptPendingInvite();
       navigate(`/workspace/${response.data.user.workspace_id}`);
       return { success: true };
     } catch (error) {
@@ -50,6 +62,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem("refresh_token", response.data.refresh_token);
       }
       setUser(response.data.user);
+      await _acceptPendingInvite();
       navigate(`/workspace/${response.data.user.workspace_id}`);
       return { success: true };
     } catch (error) {
