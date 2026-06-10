@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Menu, X } from "lucide-react";
 import { Button } from "../ui";
 
 const NAV_LINKS = [
-  { label: "Home",       to: "/" },
-  { label: "About",      to: "/about" },
-  { label: "Services",   to: "/services" },
-  { label: "Contact",    to: "/contact" },
+  { label: "Features", anchor: "features" },
+  { label: "FAQ",      anchor: "faq" },
 ];
 
 const Navbar = ({ onLogin }) => {
@@ -26,10 +24,15 @@ const Navbar = ({ onLogin }) => {
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
-  const linkClass = ({ isActive }) =>
-    `text-sm font-medium transition-colors duration-150 ${
-      isActive ? "text-primary" : "text-text-muted hover:text-text"
-    }`;
+  const scrollTo = (anchor) => {
+    setOpen(false);
+    if (location.pathname === "/") {
+      document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      sessionStorage.setItem("scrollTarget", anchor);
+      navigate("/");
+    }
+  };
 
   return (
     <header
@@ -51,10 +54,14 @@ const Navbar = ({ onLogin }) => {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-7">
-            {NAV_LINKS.map(({ label, to }) => (
-              <NavLink key={to} to={to} end={to === "/"} className={linkClass}>
+            {NAV_LINKS.map(({ label, anchor }) => (
+              <button
+                key={anchor}
+                onClick={() => scrollTo(anchor)}
+                className="text-sm font-medium text-text-muted hover:text-text transition-colors duration-150"
+              >
                 {label}
-              </NavLink>
+              </button>
             ))}
           </nav>
 
@@ -91,22 +98,14 @@ const Navbar = ({ onLogin }) => {
       {open && (
         <div className="md:hidden border-t border-border bg-surface animate-fade-in">
           <nav className="px-4 py-3 space-y-1">
-            {NAV_LINKS.map(({ label, to }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/"}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-text-muted hover:text-text hover:bg-surface-muted"
-                  }`
-                }
+            {NAV_LINKS.map(({ label, anchor }) => (
+              <button
+                key={anchor}
+                onClick={() => scrollTo(anchor)}
+                className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
               >
                 {label}
-              </NavLink>
+              </button>
             ))}
           </nav>
           <div className="px-4 py-3 border-t border-border flex flex-col gap-2">

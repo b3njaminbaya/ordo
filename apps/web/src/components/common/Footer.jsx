@@ -3,10 +3,8 @@ import { Link } from "react-router-dom";
 import { Mail, CheckCircle2 } from "lucide-react";
 
 const NAV = [
-  { label: "Home",       to: "/" },
-  { label: "About Us",   to: "/about" },
-  { label: "Services",   to: "/services" },
-  { label: "Contact Us", to: "/contact" },
+  { label: "Home",     to: "/" },
+  { label: "Sign Up",  to: "/signup" },
 ];
 
 const LEGAL = [
@@ -100,11 +98,11 @@ const Footer = () => {
           <ul className="space-y-3">
             <li>
               <a
-                href="mailto:info@taskly.com"
+                href="mailto:support@taskly.com"
                 className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
               >
                 <Mail size={14} className="flex-shrink-0" />
-                info@taskly.com
+                support@taskly.com
               </a>
             </li>
           </ul>

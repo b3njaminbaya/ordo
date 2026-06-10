@@ -6,9 +6,6 @@ import Navbar from "./components/common/Navbar.jsx";
 import Footer from "./components/common/Footer.jsx";
 import ScrollToTop from "./components/common/ScrollToTop.jsx";
 import CookieBanner from "./components/common/CookieBanner.jsx";
-import ContactUs from "./pages/ContactUs.jsx";
-import AboutUs from "./pages/AboutUs.jsx";
-import Services from "./pages/Services.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Signup from "./components/auth/Signup.jsx";
@@ -24,9 +21,6 @@ import CookiesPolicy from "./pages/CookiesPolicy.jsx";
 
 const PAGE_TITLES = {
   "/": "Home",
-  "/about": "About Us",
-  "/contact": "Contact Us",
-  "/services": "Services",
   "/signup": "Sign Up",
   "/forgot-password": "Forgot Password",
   "/privacy-policy": "Privacy Policy",
@@ -64,9 +58,6 @@ function MainLayout({ isLoginModalOpen, setIsLoginModalOpen }) {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/services" element={<Services />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
