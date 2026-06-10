@@ -277,6 +277,15 @@ def accept_invite(token):
     if invite.status == "pending":
         invite.status = "accepted"
 
+    # Clear any other pending email invite for this user in this workspace
+    stale = WorkspaceInvite.query.filter_by(
+        email=user.email,
+        workspace_id=invite.workspace_id,
+        status="pending",
+    ).first()
+    if stale and stale.id != invite.id:
+        stale.status = "accepted"
+
     db.session.commit()
 
     return jsonify({
@@ -296,14 +305,18 @@ def get_workspace_members(workspace_id):
     members = User.query.filter_by(workspace_id=workspace.id).all()
     invites = WorkspaceInvite.query.filter_by(workspace_id=workspace.id, status="pending").all()
 
+    member_emails = {m.email for m in members}
     return jsonify({
         "members": [{"id": m.id, "username": m.username, "email": m.email} for m in members],
         "pending_invites": [
             {
                 "email": i.email,
-                "invited_by": db.session.get(User, i.invited_by).username  
+                "status": i.status,
+                "invited_by": (db.session.get(User, i.invited_by).username if i.invited_by else "unknown"),
             }
             for i in invites
+            # Hide invites whose email already belongs to a current member
+            if i.email not in member_emails
         ]
     }), 200
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 import { Input, Textarea, Select, Button, Alert } from "../ui";
 
 const validationSchema = Yup.object({
@@ -13,14 +14,16 @@ const validationSchema = Yup.object({
 });
 
 const TaskForm = ({ onTaskAdded, task, tasklistId }) => {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
-    api.get("/users/")
-      .then((res) => setUsers(res.data.users || []))
+    if (!user?.workspace_id) return;
+    api.get(`/workspace/${user.workspace_id}/members`)
+      .then((res) => setUsers(res.data.members || []))
       .catch(() => setFetchError("Could not load workspace members."));
-  }, []);
+  }, [user?.workspace_id]);
 
   const handleSubmit = async (values, { setSubmitting, setStatus, resetForm }) => {
     setStatus({ error: "" });
