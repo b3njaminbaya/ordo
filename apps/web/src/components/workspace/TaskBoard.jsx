@@ -80,10 +80,9 @@ const TaskBoard = ({ task, onEditTask }) => {
 
     const onCommentAdded = (data) => {
       if (data.task_id !== task.id) return;
-      setComments((prev) => {
-        if (prev.some((c) => c.id === data.id)) return prev; // dedup own post
-        return [...prev, data];
-      });
+      // Skip own posts — already added immediately from the API response
+      if (data.user_id === user?.id) return;
+      setComments((prev) => [...prev, data]);
     };
     const onCommentUpdated = (data) => {
       if (data.task_id !== task.id) return;

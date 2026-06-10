@@ -10,9 +10,13 @@ def _get_user():
     return db.session.get(User, int(get_jwt_identity()))
 
 
-def _user_task_base(user_id):
-    """Base query: only tasks belonging to the authenticated user's task lists."""
-    return Task.query.join(TaskList, Task.tasklist_id == TaskList.id).filter(TaskList.user_id == user_id)
+def _user_task_base(user):
+    """Base query: tasks in the user's workspace, or own tasks if no workspace."""
+    base = Task.query.join(TaskList, Task.tasklist_id == TaskList.id)
+    if user.workspace_id:
+        member_ids = db.session.query(User.id).filter_by(workspace_id=user.workspace_id)
+        return base.filter(TaskList.user_id.in_(member_ids))
+    return base.filter(TaskList.user_id == user.id)
 
 
 def _task_dict(task):
@@ -88,7 +92,7 @@ def get_tasks():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    query = _user_task_base(user.id)
+    query = _user_task_base(user)
 
     if p := request.args.get("priority"):
         query = query.filter(Task.priority == p)
@@ -136,7 +140,7 @@ def get_calendar_tasks():
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
 
     tasks = (
-        _user_task_base(user.id)
+        _user_task_base(user)
         .filter(Task.due_date >= start, Task.due_date <= end)
         .order_by(Task.due_date)
         .all()
@@ -165,7 +169,7 @@ def reorder_tasks():
     # Load all user tasks for this status in one query
     tasks_by_id = {
         t.id: t
-        for t in _user_task_base(user.id).filter(Task.status == status).all()
+        for t in _user_task_base(user).filter(Task.status == status).all()
     }
 
     # Validate every ID in order belongs to the user and has this status

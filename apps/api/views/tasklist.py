@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, TaskList, Task
+from models import db, TaskList, Task, User
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
@@ -22,16 +22,26 @@ def _serialize_task(task):
     }
 
 
+def _workspace_tasklist_query(user):
+    """Return a query for all non-template tasklists visible to this user."""
+    base = TaskList.query.filter(TaskList.is_template == False)  # noqa: E712
+    if user.workspace_id:
+        member_ids = db.session.query(User.id).filter_by(workspace_id=user.workspace_id)
+        return base.filter(TaskList.user_id.in_(member_ids))
+    return base.filter(TaskList.user_id == user.id)
+
+
 @tasklist_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_all_tasklist():
-    user_id = get_jwt_identity()
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 5, type=int)
-    tasklist = TaskList.query.filter_by(user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
+    user = db.session.get(User, int(get_jwt_identity()))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    if not tasklist.items:
-        return jsonify({"error": "Task list not found"}), 404
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 100, type=int)
+
+    tasklists = _workspace_tasklist_query(user).paginate(page=page, per_page=per_page, error_out=False)
 
     return jsonify([
         {
@@ -39,18 +49,26 @@ def get_all_tasklist():
             "name": tl.name,
             "tasks": [_serialize_task(t) for t in tl.tasks],
         }
-        for tl in tasklist.items
+        for tl in tasklists.items
     ]), 200
 
 
 @tasklist_bp.route('/<int:tasklist_id>', methods=['GET'])
 @jwt_required()
 def get_tasklist(tasklist_id):
-    user_id = get_jwt_identity()
-    tasklist = TaskList.query.filter_by(id=tasklist_id, user_id=user_id).first()
+    user = db.session.get(User, int(get_jwt_identity()))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
+    tasklist = db.session.get(TaskList, tasklist_id)
     if not tasklist:
         return jsonify({"error": "Task list not found"}), 404
+
+    # Allow access if owner or same workspace member
+    if tasklist.user_id != user.id:
+        owner = db.session.get(User, tasklist.user_id)
+        if not owner or owner.workspace_id != user.workspace_id:
+            return jsonify({"error": "Unauthorized"}), 403
 
     return jsonify({
         "id": tasklist.id,
