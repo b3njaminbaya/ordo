@@ -234,16 +234,21 @@ def invite_user():
     frontend_url = current_app.config.get("FRONTEND_URL", "https://taskly-app-iota.vercel.app")
     invite_url = f"{frontend_url}/invite/{invite_token}"
 
+    email_sent = False
     try:
         from app import mail as app_mail
         msg = Message("Workspace Invitation", recipients=[email])
         msg.body = f"You've been invited to join {workspace.name}.\nClick here to accept: {invite_url}"
         app_mail.send(msg)
+        email_sent = True
     except Exception as e:
         current_app.logger.error("Email send failed: %s", e)
-        return jsonify({"error": "Failed to send email, but invite was created", "invite_url": invite_url}), 200
 
-    return jsonify({"message": "Invitation email sent successfully"}), 200
+    return jsonify({
+        "message": "Invite created successfully",
+        "email_sent": email_sent,
+        "invite_url": invite_url,
+    }), 200
 
 # Accept an invite to a workspace
 @user_bp.route("/invite/accept/<string:token>", methods=["POST"])
@@ -311,12 +316,18 @@ def generate_invite_link():
         return jsonify({"error": "Workspace not found"}), 404
 
     existing_invite = WorkspaceInvite.query.filter_by(workspace_id=workspace_id, status="active").first()
-    
+
     if existing_invite:
-        invite_token = existing_invite.token  
+        invite_token = existing_invite.token
     else:
         invite_token = secrets.token_urlsafe(32)
-        invite = WorkspaceInvite(email="link-invite", workspace_id=workspace_id, token=invite_token, status="active")
+        invite = WorkspaceInvite(
+            email="link-invite",
+            workspace_id=workspace_id,
+            invited_by=int(get_jwt_identity()),
+            token=invite_token,
+            status="active",
+        )
         db.session.add(invite)
         db.session.commit()
 
