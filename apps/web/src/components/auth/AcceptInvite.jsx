@@ -7,7 +7,7 @@ import { Button, Spinner, Alert } from "../ui";
 
 export default function AcceptInvite() {
   const { token } = useParams();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [status, setStatus] = useState("idle"); // idle | accepting | success | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -16,6 +16,9 @@ export default function AcceptInvite() {
     setStatus("accepting");
     try {
       await api.post(`/invite/accept/${token}`);
+      // Refresh session so user context reflects the new workspace_id
+      const session = await api.get("/session/");
+      setUser(session.data.user);
       setStatus("success");
       setTimeout(() => navigate("/workspace/dashboard"), 1800);
     } catch (err) {

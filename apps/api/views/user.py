@@ -257,23 +257,32 @@ def invite_user():
 @user_bp.route("/invite/accept/<string:token>", methods=["POST"])
 @jwt_required()
 def accept_invite(token):
-    invite = WorkspaceInvite.query.filter_by(token=token, status="pending").first()
+    # Accept both single-use email invites ("pending") and reusable link invites ("active")
+    invite = WorkspaceInvite.query.filter(
+        WorkspaceInvite.token == token,
+        WorkspaceInvite.status.in_(["pending", "active"]),
+    ).first()
 
     if not invite:
         return jsonify({"error": "Invalid or expired invite"}), 404
 
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     user = db.session.get(User, user_id)
 
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    user.workspace_id = invite.workspace_id  
-    invite.status = "accepted"
+    user.workspace_id = invite.workspace_id
+    # Single-use email invites are consumed; link invites stay active for others
+    if invite.status == "pending":
+        invite.status = "accepted"
 
     db.session.commit()
 
-    return jsonify({"message": "Joined workspace successfully!"}), 200
+    return jsonify({
+        "message": "Joined workspace successfully!",
+        "workspace_id": invite.workspace_id,
+    }), 200
 
 # Get workspace members
 @user_bp.route("/workspace/<string:workspace_id>/members", methods=["GET"])

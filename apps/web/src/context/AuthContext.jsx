@@ -29,12 +29,16 @@ export function AuthProvider({ children }) {
 
   const _acceptPendingInvite = async () => {
     const token = sessionStorage.getItem("pendingInviteToken");
-    if (!token) return;
+    if (!token) return null;
     sessionStorage.removeItem("pendingInviteToken");
     try {
       await api.post(`/invite/accept/${token}`);
+      // Return the refreshed user so navigation uses the correct workspace
+      const session = await api.get("/session/");
+      return session.data.user;
     } catch {
-      // Non-fatal — user still lands in workspace; invite may have already been used
+      // Non-fatal — user still lands in workspace
+      return null;
     }
   };
 
@@ -45,9 +49,10 @@ export function AuthProvider({ children }) {
       if (response.data.refresh_token) {
         localStorage.setItem("refresh_token", response.data.refresh_token);
       }
-      setUser(response.data.user);
-      await _acceptPendingInvite();
-      navigate(`/workspace/${response.data.user.workspace_id}`);
+      const updatedUser = await _acceptPendingInvite();
+      const activeUser = updatedUser || response.data.user;
+      setUser(activeUser);
+      navigate(`/workspace/${activeUser.workspace_id}`);
       return { success: true };
     } catch (error) {
       return { success: false, message: error.response?.data?.error || "Registration failed" };
@@ -61,9 +66,10 @@ export function AuthProvider({ children }) {
       if (response.data.refresh_token) {
         localStorage.setItem("refresh_token", response.data.refresh_token);
       }
-      setUser(response.data.user);
-      await _acceptPendingInvite();
-      navigate(`/workspace/${response.data.user.workspace_id}`);
+      const updatedUser = await _acceptPendingInvite();
+      const activeUser = updatedUser || response.data.user;
+      setUser(activeUser);
+      navigate(`/workspace/${activeUser.workspace_id}`);
       return { success: true };
     } catch (error) {
       return { success: false, message: error.response?.data?.error || "Login failed" };
