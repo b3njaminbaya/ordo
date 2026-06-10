@@ -238,7 +238,6 @@ const Signup = () => {
 
       </div>
       </div>
-      </div>
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
     </div>
