@@ -235,6 +235,7 @@ def invite_user():
     invite_url = f"{frontend_url}/invite/{invite_token}"
 
     email_sent = False
+    email_error = None
     try:
         from app import mail as app_mail
         msg = Message("Workspace Invitation", recipients=[email])
@@ -242,11 +243,13 @@ def invite_user():
         app_mail.send(msg)
         email_sent = True
     except Exception as e:
+        email_error = str(e)
         current_app.logger.error("Email send failed: %s", e)
 
     return jsonify({
         "message": "Invite created successfully",
         "email_sent": email_sent,
+        "email_error": email_error,
         "invite_url": invite_url,
     }), 200
 

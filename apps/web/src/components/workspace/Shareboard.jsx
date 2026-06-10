@@ -46,7 +46,8 @@ const Shareboard = () => {
       const res = await api.post("/invite/", { email: values.email, workspace_id });
       setPendingInvites((prev) => [...prev, { email: values.email, status: "pending", invited_by: "You" }]);
       if (res.data.email_sent === false) {
-        toast("Invite saved, but the email could not be delivered. Share the invite link manually.", "warning");
+        const detail = res.data.email_error ? ` (${res.data.email_error})` : "";
+        toast(`Invite saved, but email failed${detail}. Share the invite link manually.`, "warning");
       } else {
         toast("Invite sent successfully!", "success");
       }
