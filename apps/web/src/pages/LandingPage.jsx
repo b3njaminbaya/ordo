@@ -93,7 +93,7 @@ const LandingPage = () => {
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-sidebar/80 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="relative z-10 max-w-7xl mx-auto">
           <motion.div {...fadeUp(0)}>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
               <Zap size={11} /> Now with real-time collaboration
@@ -152,7 +152,7 @@ const LandingPage = () => {
 
       {/* ── Stats strip ───────────────────────────────── */}
       <section className="py-10 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
           {STATS.map(({ icon: Icon, value, label }, i) => (
             <motion.div
               key={label}
@@ -171,7 +171,7 @@ const LandingPage = () => {
 
       {/* ── How it works ──────────────────────────────── */}
       <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">How it works</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Three steps to clarity</h2>
@@ -194,7 +194,7 @@ const LandingPage = () => {
 
       {/* ── Features ──────────────────────────────────── */}
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Features</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Everything your team needs</h2>
@@ -223,7 +223,7 @@ const LandingPage = () => {
 
       {/* ── Team split ────────────────────────────────── */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
-        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-14">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-14">
           <motion.div className="lg:w-1/2" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
             <img src={TeamImage} alt="Team collaborating" className="w-full rounded-2xl shadow-card" />
           </motion.div>
@@ -260,7 +260,7 @@ const LandingPage = () => {
 
       {/* ── Values ────────────────────────────────────── */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">What we stand for</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Built on principles, not hype.</h2>
@@ -285,7 +285,7 @@ const LandingPage = () => {
 
       {/* ── FAQ ───────────────────────────────────────── */}
       <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface border-t border-border">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">FAQ</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Common questions</h2>
@@ -320,7 +320,7 @@ const LandingPage = () => {
 
       {/* ── Final CTA ─────────────────────────────────── */}
       <section className="py-28 px-4 sm:px-6 bg-page">
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-7xl mx-auto text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <Rocket size={30} className="text-primary" />
           </div>

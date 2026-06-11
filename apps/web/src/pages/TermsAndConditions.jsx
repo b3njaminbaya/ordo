@@ -75,7 +75,7 @@ const TermsAndConditions = () => (
       <div className="absolute inset-0 opacity-5 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(circle at 70% 50%, #6366f1 0%, transparent 60%), radial-gradient(circle at 20% 80%, #8b5cf6 0%, transparent 50%)" }}
       />
-      <div className="max-w-5xl mx-auto text-center relative">
+      <div className="max-w-7xl mx-auto text-center relative">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
           <FileText size={12} />
           Legal · Terms
@@ -94,7 +94,7 @@ const TermsAndConditions = () => (
 
     {/* TLDR */}
     <section className="py-10 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
+      <div className="max-w-7xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">The Short Version</p>
         <ul className="space-y-2">
           {SUMMARY.map((item) => (
@@ -109,7 +109,7 @@ const TermsAndConditions = () => (
 
     {/* Main sections */}
     <section className="pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {SECTIONS.map(({ Icon, title, id, body, highlight }, i) => (
           <div key={id} id={id} className="bg-surface rounded-2xl border border-border p-6">
             <div className="flex items-center gap-3 mb-3">
@@ -133,7 +133,7 @@ const TermsAndConditions = () => (
 
     {/* Footer CTA */}
     <section className="pb-16 px-4 sm:px-6">
-      <div className="max-w-5xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-text">Questions about these terms?</p>
           <p className="text-xs text-text-muted mt-0.5">We're happy to clarify anything — just reach out.</p>
@@ -146,7 +146,7 @@ const TermsAndConditions = () => (
         </a>
       </div>
 
-      <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
+      <div className="max-w-7xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
         <span>Related policies:</span>
         <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>
         <span>·</span>
