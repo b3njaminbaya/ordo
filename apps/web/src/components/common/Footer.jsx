@@ -110,7 +110,7 @@ const Footer = () => {
       </div>
 
       <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
-        <p>&copy; {new Date().getFullYear()} Teevexa Ordo. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Teevexa Ordo by Teevexa Ltd. All rights reserved.</p>
         <p>Built with care for productive teams.</p>
       </div>
     </div>
