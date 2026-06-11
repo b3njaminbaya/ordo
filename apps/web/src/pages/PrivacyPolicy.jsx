@@ -68,7 +68,7 @@ const PrivacyPolicy = () => (
       <div className="absolute inset-0 opacity-5 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(circle at 30% 50%, #6366f1 0%, transparent 60%), radial-gradient(circle at 80% 20%, #8b5cf6 0%, transparent 50%)" }}
       />
-      <div className="max-w-3xl mx-auto text-center relative">
+      <div className="max-w-5xl mx-auto text-center relative">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
           <Shield size={12} />
           Legal · Privacy
@@ -87,7 +87,7 @@ const PrivacyPolicy = () => (
 
     {/* TLDR card */}
     <section className="py-10 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
+      <div className="max-w-5xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">The Short Version</p>
         <ul className="space-y-2">
           {[
@@ -108,7 +108,7 @@ const PrivacyPolicy = () => (
 
     {/* Your Rights */}
     <section className="px-4 sm:px-6 pb-10">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-lg font-bold text-text mb-4">Your Rights</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {RIGHTS.map(({ label, desc }) => (
@@ -123,7 +123,7 @@ const PrivacyPolicy = () => (
 
     {/* Main sections */}
     <section className="pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-5xl mx-auto space-y-4">
         {SECTIONS.map(({ Icon, title, id, body, highlight }, i) => (
           <div key={id} id={id} className="bg-surface rounded-2xl border border-border p-6">
             <div className="flex items-center gap-3 mb-3">
@@ -147,7 +147,7 @@ const PrivacyPolicy = () => (
 
     {/* Footer CTA */}
     <section className="pb-16 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="max-w-5xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-text">Have a privacy concern?</p>
           <p className="text-xs text-text-muted mt-0.5">We take every report seriously and respond within 5 business days.</p>
@@ -160,7 +160,7 @@ const PrivacyPolicy = () => (
         </a>
       </div>
 
-      <div className="max-w-3xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
+      <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
         <span>Related policies:</span>
         <Link to="/terms-and-conditions" className="text-primary hover:underline">Terms &amp; Conditions</Link>
         <span>·</span>

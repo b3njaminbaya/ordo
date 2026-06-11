@@ -58,7 +58,7 @@ const Accessibility = () => (
       <div className="absolute inset-0 opacity-5 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(circle at 50% 60%, #6366f1 0%, transparent 60%)" }}
       />
-      <div className="max-w-3xl mx-auto text-center relative">
+      <div className="max-w-5xl mx-auto text-center relative">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
           <AccessibilityIcon size={12} />
           Legal · Accessibility
@@ -77,7 +77,7 @@ const Accessibility = () => (
 
     {/* Standards */}
     <section className="py-10 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <p className="text-xs font-bold uppercase tracking-widest text-text-muted mb-4">Standards We Target</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {STANDARDS.map(({ label, desc }) => (
@@ -92,7 +92,7 @@ const Accessibility = () => (
 
     {/* Commitments */}
     <section className="pb-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-lg font-bold text-text mb-4">Our Commitments</h2>
         <div className="space-y-3">
           {COMMITMENTS.map(({ Icon, title, body }) => (
@@ -112,7 +112,7 @@ const Accessibility = () => (
 
     {/* Known limitations */}
     <section className="pb-10 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
+      <div className="max-w-5xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">Known Limitations</p>
         <ul className="space-y-2">
           {[
@@ -132,7 +132,7 @@ const Accessibility = () => (
 
     {/* Report */}
     <section className="pb-16 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="max-w-5xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-text">Found an accessibility barrier?</p>
           <p className="text-xs text-text-muted mt-0.5">
@@ -149,7 +149,7 @@ const Accessibility = () => (
         </a>
       </div>
 
-      <div className="max-w-3xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
+      <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
         <span>Related policies:</span>
         <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>
         <span>·</span>

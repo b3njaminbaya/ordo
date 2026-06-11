@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckSquare, Bell, BarChart2, Shield, Users, Rocket,
-  ArrowRight, Star, Zap, Calendar, Kanban, CheckCircle2,
+  ArrowRight, Zap, Calendar, Kanban, CheckCircle2,
   RefreshCw, Lock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "../components/ui";
-import HeroImage from "../assets/Hero.jpg";
 import TeamImage from "../assets/Team.jpg";
-import TestimonialImage from "../assets/Testimonial.jpeg";
 
 const FEATURES = [
   { Icon: CheckSquare, title: "Task Management",     desc: "Create, prioritize, and track every task with due dates, status labels, and subtasks — all in one place." },
@@ -75,7 +73,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [openFAQ, setOpenFAQ] = useState(null);
 
-  // Honour scroll targets set by the navbar when navigating from another page
   useEffect(() => {
     const target = sessionStorage.getItem("scrollTarget");
     if (target) {
@@ -90,14 +87,13 @@ const LandingPage = () => {
     <div className="bg-page text-text overflow-x-hidden">
 
       {/* ── Hero ───────────────────────────────────────── */}
-      <section className="relative min-h-[92vh] flex items-center justify-center text-center px-4 sm:px-6 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${HeroImage})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-sidebar/80 via-sidebar/70 to-sidebar/90" />
+      <section className="relative min-h-[92vh] flex items-center justify-center text-center px-4 sm:px-6 bg-sidebar overflow-hidden">
+        {/* Subtle background glow — no photo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-sidebar/80 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 max-w-4xl mx-auto">
+        <div className="relative z-10 max-w-5xl mx-auto">
           <motion.div {...fadeUp(0)}>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
               <Zap size={11} /> Now with real-time collaboration
@@ -149,7 +145,7 @@ const LandingPage = () => {
           </motion.div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/30 text-xs">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
           <div className="w-px h-10 bg-gradient-to-b from-transparent to-white/30" />
         </div>
       </section>
@@ -198,7 +194,7 @@ const LandingPage = () => {
 
       {/* ── Features ──────────────────────────────────── */}
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Features</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Everything your team needs</h2>
@@ -227,7 +223,7 @@ const LandingPage = () => {
 
       {/* ── Team split ────────────────────────────────── */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-14">
+        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-14">
           <motion.div className="lg:w-1/2" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
             <img src={TeamImage} alt="Team collaborating" className="w-full rounded-2xl shadow-card" />
           </motion.div>
@@ -287,35 +283,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── Testimonial ───────────────────────────────── */}
-      <section className="py-24 px-4 sm:px-6 bg-sidebar">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="flex justify-center gap-1 mb-8">
-            {[...Array(5)].map((_, i) => <Star key={i} size={18} className="text-warning fill-warning" />)}
-          </div>
-          <blockquote>
-            <p className="text-xl sm:text-2xl font-light italic text-white/90 leading-relaxed">
-              &ldquo;Taskly replaced three tools for our team. It&apos;s the only task manager that actually
-              gets out of your way and lets you focus on the work.&rdquo;
-            </p>
-            <footer className="mt-8 flex items-center justify-center gap-3">
-              <img
-                src={TestimonialImage}
-                alt="Benjamin Baya"
-                className="w-12 h-12 rounded-full border-2 border-primary object-cover"
-              />
-              <div className="text-left">
-                <p className="text-sm font-semibold text-white">Benjamin Baya</p>
-                <p className="text-xs text-white/50">Project Manager</p>
-              </div>
-            </footer>
-          </blockquote>
-        </div>
-      </section>
-
       {/* ── FAQ ───────────────────────────────────────── */}
       <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface border-t border-border">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">FAQ</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Common questions</h2>
@@ -350,7 +320,7 @@ const LandingPage = () => {
 
       {/* ── Final CTA ─────────────────────────────────── */}
       <section className="py-28 px-4 sm:px-6 bg-page">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <Rocket size={30} className="text-primary" />
           </div>

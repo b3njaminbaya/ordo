@@ -58,7 +58,7 @@ const CookiesPolicy = () => (
       <div className="absolute inset-0 opacity-5 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(circle at 40% 40%, #6366f1 0%, transparent 60%), radial-gradient(circle at 80% 70%, #8b5cf6 0%, transparent 50%)" }}
       />
-      <div className="max-w-3xl mx-auto text-center relative">
+      <div className="max-w-5xl mx-auto text-center relative">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
           <Cookie size={12} />
           Legal · Cookies
@@ -77,7 +77,7 @@ const CookiesPolicy = () => (
 
     {/* What are cookies */}
     <section className="py-10 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
+      <div className="max-w-5xl mx-auto bg-primary/5 border border-primary/20 rounded-2xl p-6">
         <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">What Are Cookies?</p>
         <p className="text-sm text-text-muted leading-relaxed">
           Cookies are small text files stored on your device when you visit a website. They are widely used to make sites work correctly, remember your preferences, and give site owners insight into how their products are used. Cookies themselves do not contain personally identifiable information — they store small tokens that reference data on our servers.
@@ -99,7 +99,7 @@ const CookiesPolicy = () => (
 
     {/* Cookie types */}
     <section className="pb-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-lg font-bold text-text mb-4">Cookies We Use</h2>
         <div className="space-y-4">
           {COOKIE_TYPES.map(({ Icon, name, required, desc, examples }) => (
@@ -135,7 +135,7 @@ const CookiesPolicy = () => (
 
     {/* FAQ */}
     <section className="pb-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <h2 className="text-lg font-bold text-text mb-4">Frequently Asked Questions</h2>
         <div className="space-y-3">
           {FAQ.map(({ q, a }) => (
@@ -150,7 +150,7 @@ const CookiesPolicy = () => (
 
     {/* CTA */}
     <section className="pb-16 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="max-w-5xl mx-auto bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-text">Cookie questions or concerns?</p>
           <p className="text-xs text-text-muted mt-0.5">Contact us and we'll respond within 5 business days.</p>
@@ -163,7 +163,7 @@ const CookiesPolicy = () => (
         </a>
       </div>
 
-      <div className="max-w-3xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
+      <div className="max-w-5xl mx-auto mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted">
         <span>Related policies:</span>
         <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>
         <span>·</span>
