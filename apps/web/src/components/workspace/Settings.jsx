@@ -249,7 +249,7 @@ const Settings = () => {
 
         {/* Middle row: Appearance */}
         <div className="mt-5">
-          <Section icon={Monitor} title="Appearance" description="Choose how Taskly looks to you.">
+          <Section icon={Monitor} title="Appearance" description="Choose how Teevexa Ordo looks to you.">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {THEME_OPTIONS.map(({ value, label, icon: Icon, desc }) => {
                 const active = theme === value;
@@ -278,7 +278,7 @@ const Settings = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start mt-5">
 
           {/* ── Notifications ── */}
-          <Section icon={Bell} title="Notifications" description="Control when and how Taskly notifies you.">
+          <Section icon={Bell} title="Notifications" description="Control when and how Teevexa Ordo notifies you.">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-text">Deadline reminders</p>

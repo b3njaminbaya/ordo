@@ -6,62 +6,62 @@ const SECTIONS = [
     Icon: UserCheck,
     title: "Acceptance of Terms",
     id: "acceptance",
-    body: "By accessing or using Taskly, you confirm that you are at least 16 years of age and agree to be bound by these Terms and Conditions and our Privacy Policy. If you are using Taskly on behalf of an organization, you represent that you have the authority to bind that organization to these terms.",
+    body: "By accessing or using Teevexa Ordo, you confirm that you are at least 16 years of age and agree to be bound by these Terms and Conditions and our Privacy Policy. If you are using Teevexa Ordo on behalf of an organization, you represent that you have the authority to bind that organization to these terms.",
     highlight: "If you do not agree with any part of these terms, you may not access or use our services.",
   },
   {
     Icon: ShieldCheck,
     title: "User Accounts",
     id: "accounts",
-    body: "You must create an account to use Taskly. You are responsible for: maintaining the confidentiality of your login credentials, all activity that occurs under your account, keeping your account information accurate and up to date. You may not share your account with others or create accounts for any purpose other than using Taskly as intended.",
+    body: "You must create an account to use Teevexa Ordo. You are responsible for: maintaining the confidentiality of your login credentials, all activity that occurs under your account, keeping your account information accurate and up to date. You may not share your account with others or create accounts for any purpose other than using Teevexa Ordo as intended.",
     highlight: null,
   },
   {
     Icon: AlertOctagon,
     title: "Acceptable Use",
     id: "acceptable-use",
-    body: "You agree not to use Taskly to: engage in any unlawful activity; upload or transmit malware, viruses, or harmful code; attempt to gain unauthorized access to our systems or other accounts; spam, harass, or harm other users; reverse-engineer, copy, or redistribute any part of our platform without permission; use the service in a way that could damage, disable, or impair it.",
+    body: "You agree not to use Teevexa Ordo to: engage in any unlawful activity; upload or transmit malware, viruses, or harmful code; attempt to gain unauthorized access to our systems or other accounts; spam, harass, or harm other users; reverse-engineer, copy, or redistribute any part of our platform without permission; use the service in a way that could damage, disable, or impair it.",
     highlight: "Violations may result in immediate account suspension or termination without notice.",
   },
   {
     Icon: Copyright,
     title: "Intellectual Property",
     id: "ip",
-    body: "All content, trademarks, trade dress, logos, and branding on Taskly are owned by us or our licensors and are protected by applicable intellectual property laws. We grant you a limited, non-exclusive, non-transferable license to use Taskly solely for its intended purpose. You retain ownership of content you create within the platform.",
+    body: "All content, trademarks, trade dress, logos, and branding on Teevexa Ordo are owned by us or our licensors and are protected by applicable intellectual property laws. We grant you a limited, non-exclusive, non-transferable license to use Teevexa Ordo solely for its intended purpose. You retain ownership of content you create within the platform.",
     highlight: null,
   },
   {
     Icon: AlertOctagon,
     title: "Limitation of Liability",
     id: "liability",
-    body: "Taskly is provided 'as is' without warranties of any kind, express or implied. To the fullest extent permitted by law, we disclaim all warranties including merchantability, fitness for a particular purpose, and non-infringement. We are not liable for any indirect, incidental, special, or consequential damages arising from your use of or inability to use Taskly.",
+    body: "Teevexa Ordo is provided 'as is' without warranties of any kind, express or implied. To the fullest extent permitted by law, we disclaim all warranties including merchantability, fitness for a particular purpose, and non-infringement. We are not liable for any indirect, incidental, special, or consequential damages arising from your use of or inability to use Teevexa Ordo.",
     highlight: null,
   },
   {
     Icon: XCircle,
     title: "Termination",
     id: "termination",
-    body: "We reserve the right to suspend or terminate your account at our sole discretion, with or without notice, if we determine that you have violated these Terms. You may also delete your account at any time from your Account Settings. Upon termination, your right to use Taskly ceases immediately.",
+    body: "We reserve the right to suspend or terminate your account at our sole discretion, with or without notice, if we determine that you have violated these Terms. You may also delete your account at any time from your Account Settings. Upon termination, your right to use Teevexa Ordo ceases immediately.",
     highlight: null,
   },
   {
     Icon: RefreshCw,
     title: "Changes to Terms",
     id: "changes",
-    body: "We may update these Terms from time to time to reflect changes in our services or legal requirements. When we make significant changes, we will notify you via email or an in-app notification at least 14 days before the changes take effect. Your continued use of Taskly after that period constitutes acceptance of the updated terms.",
+    body: "We may update these Terms from time to time to reflect changes in our services or legal requirements. When we make significant changes, we will notify you via email or an in-app notification at least 14 days before the changes take effect. Your continued use of Teevexa Ordo after that period constitutes acceptance of the updated terms.",
     highlight: null,
   },
   {
     Icon: Mail,
     title: "Contact",
     id: "contact",
-    body: "For questions about these Terms and Conditions or to report a violation, please contact us at info@taskly.com. For urgent security concerns, mark your subject line as 'URGENT' and we will prioritize your inquiry.",
+    body: "For questions about these Terms and Conditions or to report a violation, please contact us at support@teevexa.com. For urgent security concerns, mark your subject line as 'URGENT' and we will prioritize your inquiry.",
     highlight: null,
   },
 ];
 
 const SUMMARY = [
-  "You must be 16+ to use Taskly.",
+  "You must be 16+ to use Teevexa Ordo.",
   "Don't misuse the platform — no spam, hacking, or illegal activity.",
   "You own your content; we own our platform and branding.",
   "We can suspend accounts that violate these terms.",
@@ -82,7 +82,7 @@ const TermsAndConditions = () => (
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">Terms &amp; Conditions</h1>
         <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-          These terms govern your use of Taskly. We've written them to be clear and fair — please read them before using our platform.
+          These terms govern your use of Teevexa Ordo. We've written them to be clear and fair — please read them before using our platform.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm text-white/40">
           <span>Effective: May 2026</span>
@@ -139,7 +139,7 @@ const TermsAndConditions = () => (
           <p className="text-xs text-text-muted mt-0.5">We're happy to clarify anything — just reach out.</p>
         </div>
         <a
-          href="mailto:info@taskly.com"
+          href="mailto:support@teevexa.com"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <Mail size={14} /> Contact Us

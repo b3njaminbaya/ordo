@@ -128,7 +128,7 @@ def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
 
 @app.route("/")
 def index():
-    return jsonify({"message": "Welcome to Taskly API"})
+    return jsonify({"message": "Welcome to Teevexa Ordo API"})
 
 
 # ── APScheduler: deadline notifications ──────────────────────────────────────

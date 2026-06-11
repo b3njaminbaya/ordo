@@ -48,7 +48,7 @@ const Signup = () => {
         {/* Logo */}
         <div className="flex items-center gap-2.5 relative z-10">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg shadow">T</div>
-          <span className="text-white font-bold text-xl tracking-tight">Taskly</span>
+          <span className="text-white font-bold text-xl tracking-tight">Teevexa Ordo</span>
         </div>
 
         {/* Tagline */}
@@ -58,7 +58,7 @@ const Signup = () => {
             <span className="text-primary">finally organized.</span>
           </h2>
           <p className="mt-4 text-white/60 text-sm leading-relaxed">
-            Join teams already using Taskly to ship faster, stay aligned, and stress less.
+            Join teams already using Teevexa Ordo to ship faster, stay aligned, and stress less.
           </p>
           <ul className="mt-6 space-y-3">
             {[
@@ -77,7 +77,7 @@ const Signup = () => {
           </ul>
         </div>
 
-        <p className="text-xs text-white/30 relative z-10">&copy; {new Date().getFullYear()} Taskly</p>
+        <p className="text-xs text-white/30 relative z-10">&copy; {new Date().getFullYear()} Teevexa Ordo</p>
       </div>
 
       {/* Right form panel */}

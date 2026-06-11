@@ -57,7 +57,7 @@ const Footer = () => {
         <div className="col-span-2 md:col-span-1">
           <Link to="/" className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-sm">T</div>
-            <span className="font-bold text-lg tracking-tight">Taskly</span>
+            <span className="font-bold text-lg tracking-tight">Teevexa Ordo</span>
           </Link>
           <p className="text-sm text-white/60 leading-relaxed max-w-xs">
             Calm, focused task management for teams who value clarity over chaos.
@@ -98,11 +98,11 @@ const Footer = () => {
           <ul className="space-y-3">
             <li>
               <a
-                href="mailto:support@taskly.com"
+                href="mailto:support@teevexa.com"
                 className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
               >
                 <Mail size={14} className="flex-shrink-0" />
-                support@taskly.com
+                support@teevexa.com
               </a>
             </li>
           </ul>
@@ -110,7 +110,7 @@ const Footer = () => {
       </div>
 
       <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
-        <p>&copy; {new Date().getFullYear()} Taskly. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Teevexa Ordo. All rights reserved.</p>
         <p>Built with care for productive teams.</p>
       </div>
     </div>

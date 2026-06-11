@@ -6,7 +6,7 @@ const COOKIE_TYPES = [
     Icon: Lock,
     name: "Essential Cookies",
     required: true,
-    desc: "These cookies are strictly necessary for Taskly to function. They handle user authentication (JWT tokens), maintain your session across pages, and protect against cross-site request forgery. You cannot opt out of these cookies.",
+    desc: "These cookies are strictly necessary for Teevexa Ordo to function. They handle user authentication (JWT tokens), maintain your session across pages, and protect against cross-site request forgery. You cannot opt out of these cookies.",
     examples: ["Authentication tokens", "Session identifiers", "CSRF protection tokens"],
   },
   {
@@ -34,7 +34,7 @@ const COOKIE_TYPES = [
 
 const FAQ = [
   {
-    q: "Can I use Taskly without accepting cookies?",
+    q: "Can I use Teevexa Ordo without accepting cookies?",
     a: "Essential cookies are required for the platform to function — you cannot opt out of them. All other cookie categories are optional and can be declined from the banner or your browser settings.",
   },
   {
@@ -43,7 +43,7 @@ const FAQ = [
   },
   {
     q: "Do you use third-party cookies?",
-    a: "Taskly does not currently use advertising or social media tracking cookies. Any third-party services we integrate are evaluated for privacy compliance before use.",
+    a: "Teevexa Ordo does not currently use advertising or social media tracking cookies. Any third-party services we integrate are evaluated for privacy compliance before use.",
   },
   {
     q: "How long do cookies last?",
@@ -65,7 +65,7 @@ const CookiesPolicy = () => (
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">Cookies Policy</h1>
         <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-          We believe in full transparency. Here's a plain-English breakdown of every cookie Taskly uses and exactly why.
+          We believe in full transparency. Here's a plain-English breakdown of every cookie Teevexa Ordo uses and exactly why.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm text-white/40">
           <span>Effective: May 2026</span>
@@ -156,7 +156,7 @@ const CookiesPolicy = () => (
           <p className="text-xs text-text-muted mt-0.5">Contact us and we'll respond within 5 business days.</p>
         </div>
         <a
-          href="mailto:info@taskly.com"
+          href="mailto:support@teevexa.com"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <Mail size={14} /> Contact Us

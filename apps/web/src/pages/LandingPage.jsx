@@ -34,7 +34,7 @@ const STEPS = [
 ];
 
 const VALUES = [
-  { title: "Simplicity first",     desc: "The best tool is the one you actually use. Taskly is intentionally simple — powerful where it matters, absent where it doesn't." },
+  { title: "Simplicity first",     desc: "The best tool is the one you actually use. Teevexa Ordo is intentionally simple — powerful where it matters, absent where it doesn't." },
   { title: "Calm over chaos",      desc: "Productivity shouldn't feel stressful. Our design reduces noise, surfaces what matters, and keeps your team focused." },
   { title: "Transparency",         desc: "Everyone on your team sees the same picture. No hidden state, no confused handoffs — clear ownership and visible progress." },
   { title: "Built for real teams", desc: "Every feature is designed around how teams actually work, not how productivity gurus say they should." },
@@ -42,8 +42,8 @@ const VALUES = [
 
 const FAQS = [
   {
-    question: "Is Taskly really free?",
-    answer: "Yes — Taskly is free to start with no credit card required. Create a workspace, invite your team, and use every feature without any trial limits.",
+    question: "Is Teevexa Ordo really free?",
+    answer: "Yes — Teevexa Ordo is free to start with no credit card required. Create a workspace, invite your team, and use every feature without any trial limits.",
   },
   {
     question: "How do I invite teammates?",
@@ -54,8 +54,8 @@ const FAQS = [
     answer: "Yes. Click 'Forgot password?' on the login screen and enter your email. You'll receive a secure reset link valid for 1 hour.",
   },
   {
-    question: "Where is Taskly hosted?",
-    answer: "The Taskly web app is hosted on Vercel and the API on Render. Both run on globally distributed infrastructure for low-latency access.",
+    question: "Where is Teevexa Ordo hosted?",
+    answer: "The Teevexa Ordo web app is hosted on Vercel and the API on Render. Both run on globally distributed infrastructure for low-latency access.",
   },
   {
     question: "Is my data secure?",
@@ -112,7 +112,7 @@ const LandingPage = () => {
             className="mt-6 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed"
             {...fadeUp(0.2)}
           >
-            Taskly brings tasks, deadlines, and teammates into one calm, focused workspace.
+            Teevexa Ordo brings tasks, deadlines, and teammates into one calm, focused workspace.
             Stop juggling tools — start shipping.
           </motion.p>
 
@@ -233,7 +233,7 @@ const LandingPage = () => {
               Less chaos,<br />more done.
             </h2>
             <p className="mt-5 text-text-muted leading-relaxed">
-              Taskly gives every team member a clear picture of what&apos;s happening, what&apos;s next,
+              Teevexa Ordo gives every team member a clear picture of what&apos;s happening, what&apos;s next,
               and who owns what — without the noise of endless status meetings.
             </p>
             <ul className="mt-6 space-y-3">
@@ -265,7 +265,7 @@ const LandingPage = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-primary">What we stand for</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Built on principles, not hype.</h2>
             <p className="mt-4 text-text-muted max-w-xl mx-auto">
-              Every design and product decision at Taskly comes back to these four ideas.
+              Every design and product decision at Teevexa Ordo comes back to these four ideas.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -291,7 +291,7 @@ const LandingPage = () => {
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Common questions</h2>
             <p className="mt-4 text-text-muted">
               Quick answers before you sign up. Still unsure?{" "}
-              <a href="mailto:support@taskly.com" className="text-primary hover:underline">Email us.</a>
+              <a href="mailto:support@teevexa.com" className="text-primary hover:underline">Email us.</a>
             </p>
           </div>
           <div className="space-y-3">
@@ -328,7 +328,7 @@ const LandingPage = () => {
             Ready to work better together?
           </h2>
           <p className="mt-4 text-text-muted text-lg max-w-xl mx-auto">
-            Join teams already using Taskly to ship faster, stay organized, and stress less.
+            Join teams already using Teevexa Ordo to ship faster, stay organized, and stress less.
             Free forever for small teams.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">

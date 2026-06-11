@@ -65,7 +65,7 @@ const Accessibility = () => (
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">Accessibility Statement</h1>
         <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-          Taskly is committed to being usable by everyone, regardless of ability or assistive technology.
+          Teevexa Ordo is committed to being usable by everyone, regardless of ability or assistive technology.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm text-white/40">
           <span>Effective: May 2026</span>
@@ -137,12 +137,12 @@ const Accessibility = () => (
           <p className="text-sm font-semibold text-text">Found an accessibility barrier?</p>
           <p className="text-xs text-text-muted mt-0.5">
             Email us at{" "}
-            <a href="mailto:info@taskly.com" className="text-primary hover:underline">info@taskly.com</a>{" "}
+            <a href="mailto:support@teevexa.com" className="text-primary hover:underline">support@teevexa.com</a>{" "}
             with the page URL and a description of the issue. We aim to respond within 5 business days.
           </p>
         </div>
         <a
-          href="mailto:info@taskly.com"
+          href="mailto:support@teevexa.com"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <Mail size={14} /> Report Issue

@@ -56,7 +56,7 @@ function SidebarContent({ onClose }) {
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-white font-bold text-sm">
             T
           </div>
-          <span className="font-semibold text-lg tracking-tight">Taskly</span>
+          <span className="font-semibold text-lg tracking-tight">Teevexa Ordo</span>
         </div>
         {onClose && (
           <button

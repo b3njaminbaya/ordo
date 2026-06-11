@@ -44,7 +44,7 @@ const LoginModal = ({ onClose }) => {
 
         {/* Body */}
         <div className="p-6">
-          <p className="text-sm text-text-muted mb-6">Sign in to your Taskly account to continue.</p>
+          <p className="text-sm text-text-muted mb-6">Sign in to your Teevexa Ordo account to continue.</p>
 
           <Formik
             initialValues={{ identifier: "", password: "" }}

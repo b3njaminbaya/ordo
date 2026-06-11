@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Cookie, X } from "lucide-react";
 import { Button } from "../ui";
 
-const STORAGE_KEY = "taskly_cookie_consent";
+const STORAGE_KEY = "teevexaordo_cookie_consent";
 
 const CookieBanner = () => {
   const [visible, setVisible] = useState(false);

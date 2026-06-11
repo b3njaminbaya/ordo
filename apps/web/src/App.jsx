@@ -34,8 +34,8 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
-    const title = PAGE_TITLES[location.pathname] ?? "Taskly";
-    document.title = `Taskly | ${title}`;
+    const title = PAGE_TITLES[location.pathname] ?? "Teevexa Ordo";
+    document.title = `Teevexa Ordo | ${title}`;
   }, [location.pathname]);
 
   return (

@@ -50,7 +50,7 @@ const ResetPassword = () => {
             </div>
             <h1 className="text-2xl font-bold text-text">Set new password</h1>
             <p className="text-sm text-text-muted mt-2 text-center max-w-xs">
-              Choose a strong password for your Taskly account.
+              Choose a strong password for your Teevexa Ordo account.
             </p>
           </div>
 

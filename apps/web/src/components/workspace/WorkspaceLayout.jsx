@@ -67,7 +67,7 @@ const WorkspaceLayout = () => {
           >
             <Menu size={20} />
           </button>
-          <span className="ml-2 font-semibold text-text">Taskly</span>
+          <span className="ml-2 font-semibold text-text">Teevexa Ordo</span>
         </div>
 
         {/* Connection-lost banner */}
