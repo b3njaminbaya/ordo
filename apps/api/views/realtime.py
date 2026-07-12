@@ -59,3 +59,12 @@ def emit_comment_updated(workspace_id, comment_dict):
 
 def emit_comment_deleted(workspace_id, task_id, comment_id):
     socketio.emit("comment_deleted", {"task_id": task_id, "comment_id": comment_id}, room=f"workspace_{workspace_id}")
+
+
+def emit_timer_started(user_id, entry_dict):
+    """Broadcast to the user's personal room so all their open tabs stay in sync."""
+    socketio.emit("timer_started", entry_dict, room=f"user_{user_id}")
+
+
+def emit_timer_stopped(user_id, entry_dict):
+    socketio.emit("timer_stopped", entry_dict, room=f"user_{user_id}")

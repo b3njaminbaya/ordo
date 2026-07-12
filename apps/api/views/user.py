@@ -231,15 +231,19 @@ def invite_user():
     db.session.add(invite)
     db.session.commit()
 
-    frontend_url = current_app.config.get("FRONTEND_URL", "https://taskly-app-iota.vercel.app")
+    frontend_url = current_app.config.get("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
     invite_url = f"{frontend_url}/invite/{invite_token}"
 
     email_sent = False
     email_error = None
     try:
         from app import mail as app_mail
-        msg = Message("Workspace Invitation", recipients=[email])
-        msg.body = f"You've been invited to join {workspace.name}.\nClick here to accept: {invite_url}"
+        msg = Message("Teevexa Ordo – Workspace Invitation", recipients=[email])
+        msg.body = (
+            f"You've been invited to join the '{workspace.name}' workspace on Teevexa Ordo.\n"
+            f"Click here to accept: {invite_url}\n\n"
+            "— The Teevexa Ordo Team"
+        )
         app_mail.send(msg)
         email_sent = True
     except Exception as e:
@@ -356,6 +360,6 @@ def generate_invite_link():
         db.session.add(invite)
         db.session.commit()
 
-    frontend_url = current_app.config.get("FRONTEND_URL", "https://taskly-app-iota.vercel.app")
+    frontend_url = current_app.config.get("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
     invite_url = f"{frontend_url}/invite/{invite_token}"
     return jsonify({"link": invite_url}), 200

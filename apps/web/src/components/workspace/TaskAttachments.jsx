@@ -6,7 +6,7 @@ import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { Spinner } from "../ui";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://taskly-app-9u0e.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
 
 const ACCEPTED = [
   "image/png","image/jpeg","image/gif","image/webp","image/svg+xml",

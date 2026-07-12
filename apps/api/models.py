@@ -11,6 +11,7 @@ db = SQLAlchemy()
 
 priority_enum = ENUM("low", "medium", "high", "urgent", name="priority_levels", create_type=True)
 status_enum = ENUM("pending", "in-progress", "completed", "todo", name="task_status", create_type=True)
+time_category_enum = ENUM("focus", "meeting", "review", "other", name="time_category", create_type=True)
 
 class User(db.Model, SerializerMixin):
     __tablename__ = "users"
@@ -43,6 +44,7 @@ class User(db.Model, SerializerMixin):
         "-workspace",
         "-reset_token",
         "-token_expiry",
+        "-time_entries",
     )
 
 
@@ -231,3 +233,29 @@ class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True)
     created_at = db.Column(db.DateTime, nullable=False)
+
+
+class TimeEntry(db.Model, SerializerMixin):
+    """One unit of tracked time, owned exclusively by the user who logged it."""
+    __tablename__ = "time_entries"
+
+    id               = db.Column(db.Integer, primary_key=True)
+    user_id          = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    task_id          = db.Column(db.Integer, db.ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
+    tasklist_id      = db.Column(db.Integer, db.ForeignKey("tasklists.id", ondelete="SET NULL"), nullable=True)
+    started_at       = db.Column(db.DateTime, nullable=False)
+    ended_at         = db.Column(db.DateTime, nullable=True)          # NULL while timer is running
+    duration_seconds = db.Column(db.Integer, nullable=True)           # server-computed on stop/log; NULL while running
+    note             = db.Column(db.String(300), nullable=True)
+    category         = db.Column(time_category_enum, nullable=True)
+    created_at       = db.Column(db.DateTime, default=_utcnow)
+
+    user     = db.relationship("User", backref=db.backref("time_entries", cascade="all, delete-orphan"))
+    task     = db.relationship("Task",     foreign_keys=[task_id])
+    tasklist = db.relationship("TaskList", foreign_keys=[tasklist_id])
+
+    __table_args__ = (
+        db.Index("ix_time_entries_user_ended_at", "user_id", "ended_at"),
+    )
+
+    serialize_rules = ("-user.time_entries",)

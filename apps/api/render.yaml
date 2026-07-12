@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: taskly-api
+    name: teevexa-ordo-api
     runtime: python
     rootDir: apps/api
     buildCommand: pip install -r requirements.txt && flask db upgrade

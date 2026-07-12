@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm turbo build --filter=@taskly/web",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@teevexa-ordo/web",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "rewrites": [

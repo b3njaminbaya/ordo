@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, ListTodo, Kanban, CalendarDays,
   Share2, User, Settings, Home, LogOut, X,
-  Sun, Moon, Monitor, RefreshCw,
+  Sun, Moon, Monitor, RefreshCw, Timer,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { name: "Kanban",     icon: Kanban,          path: "/workspace/kanban" },
   { name: "Calendar",   icon: CalendarDays,    path: "/workspace/calendar" },
   { name: "Recurring",  icon: RefreshCw,       path: "/workspace/recurring" },
+  { name: "Time",       icon: Timer,           path: "/workspace/time" },
   { name: "Shareboard", icon: Share2,          path: "/workspace/shareboard" },
   { name: "Profile",    icon: User,            path: "/workspace/profile" },
   { name: "Settings",   icon: Settings,        path: "/workspace/settings" },

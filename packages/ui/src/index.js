@@ -1,7 +1,7 @@
 /**
- * @taskly/ui
+ * @teevexa-ordo/ui
  *
- * Shared design system for Taskly apps.
+ * Shared design system for Teevexa Ordo apps.
  * The Tailwind preset lives in ../tailwind.config.js (CJS) and is loaded
  * directly via createRequire in apps that extend it (e.g. apps/web).
  * This file exports framework-agnostic JS constants for use in app code

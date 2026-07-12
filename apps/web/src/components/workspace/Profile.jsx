@@ -6,7 +6,7 @@ import { Settings, LogOut, Camera, X, ZoomIn, ZoomOut, Check, Mail, Building2, U
 import { Button, Alert } from "../ui";
 import api from "../../api/axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://taskly-app-9u0e.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
 
 async function getCroppedBlob(imageSrc, croppedAreaPixels) {
   const image = await new Promise((resolve, reject) => {

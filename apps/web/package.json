@@ -1,5 +1,5 @@
 {
-  "name": "@taskly/web",
+  "name": "@teevexa-ordo/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
-    "@taskly/types": "workspace:*",
+    "@teevexa-ordo/types": "workspace:*",
     "axios": "^1.8.2",
     "chart.js": "^4.4.8",
     "formik": "^2.4.6",
@@ -32,8 +32,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
-    "@taskly/config-eslint": "workspace:*",
-    "@taskly/config-tsconfig": "workspace:*",
+    "@teevexa-ordo/config-eslint": "workspace:*",
+    "@teevexa-ordo/config-tsconfig": "workspace:*",
+    "@teevexa-ordo/ui": "workspace:*",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",

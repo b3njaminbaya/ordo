@@ -12,6 +12,7 @@ import Settings from "./Settings.jsx";
 import KanbanBoard from "./KanbanBoard.jsx";
 import CalendarView from "./CalendarView.jsx";
 import RecurringTasks from "./RecurringTasks.jsx";
+import TimeTracking from "./TimeTracking.jsx";
 import { useAuth } from "../../context/AuthContext";
 import { socket } from "../../socket";
 import { Menu, WifiOff } from "lucide-react";
@@ -92,6 +93,7 @@ const WorkspaceLayout = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/recurring" element={<RecurringTasks />} />
+            <Route path="/time" element={<TimeTracking />} />
             <Route path="*" element={<Navigate to="/workspace/dashboard" replace />} />
           </Routes>
         </main>

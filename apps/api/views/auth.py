@@ -210,13 +210,14 @@ def reset_password(token):
 
 
 def send_reset_email(user, token):
-    frontend_url = current_app.config.get("FRONTEND_URL", "https://taskly-app-iota.vercel.app")
+    frontend_url = current_app.config.get("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
     reset_url = f"{frontend_url}/reset-password/{token}"
     from app import mail as app_mail
-    msg = Message("Password Reset Request", recipients=[user.email])
+    msg = Message("Teevexa Ordo – Password Reset Request", recipients=[user.email])
     msg.body = (
-        f"Click the following link to reset your password: {reset_url}\n"
+        f"Click the following link to reset your Teevexa Ordo password: {reset_url}\n"
         "This link expires in 1 hour.\n"
-        "If you did not request this, please ignore this email."
+        "If you did not request this, please ignore this email.\n\n"
+        "— The Teevexa Ordo Team"
     )
     app_mail.send(msg)

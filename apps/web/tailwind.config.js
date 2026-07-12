@@ -1,17 +1,17 @@
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-// Load the shared design-token preset from @taskly/ui (CJS module).
-const tasklyPreset = require("@taskly/ui/tailwind");
+// Load the shared design-token preset from @teevexa-ordo/ui (CJS module).
+const teevexaOrdoPreset = require("@teevexa-ordo/ui/tailwind");
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  presets: [tasklyPreset],
+  presets: [teevexaOrdoPreset],
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   darkMode: "class",
   theme: {
     extend: {
-      // Web-specific additions on top of the @taskly/ui preset.
+      // Web-specific additions on top of the @teevexa-ordo/ui preset.
       borderRadius: {
         sm: "0.375rem",
         lg: "0.75rem",

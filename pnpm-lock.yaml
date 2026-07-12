@@ -22,7 +22,7 @@ importers:
       '@heroicons/react':
         specifier: ^2.2.0
         version: 2.2.0(react@19.2.6)
-      '@taskly/types':
+      '@teevexa-ordo/types':
         specifier: workspace:*
         version: link:../../packages/types
       axios:
@@ -68,12 +68,15 @@ importers:
       '@eslint/js':
         specifier: ^9.19.0
         version: 9.39.4
-      '@taskly/config-eslint':
+      '@teevexa-ordo/config-eslint':
         specifier: workspace:*
         version: link:../../packages/config/eslint
-      '@taskly/config-tsconfig':
+      '@teevexa-ordo/config-tsconfig':
         specifier: workspace:*
         version: link:../../packages/config/tsconfig
+      '@teevexa-ordo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@testing-library/jest-dom':
         specifier: ^6.4.0
         version: 6.9.1

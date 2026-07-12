@@ -3,63 +3,67 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckSquare, Bell, BarChart2, Shield, Users, Rocket,
-  ArrowRight, Zap, Calendar, Kanban, CheckCircle2,
-  RefreshCw, Lock, ChevronDown, ChevronUp,
+  ArrowRight, Calendar, Kanban, CheckCircle2, RefreshCw,
+  Timer, Server, Database, Lock, Package, Wrench, Headphones,
+  ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "../components/ui";
 import TeamImage from "../assets/Team.jpg";
 
 const FEATURES = [
   { Icon: CheckSquare, title: "Task Management",     desc: "Create, prioritize, and track every task with due dates, status labels, and subtasks — all in one place." },
-  { Icon: Kanban,      title: "Kanban Boards",       desc: "Visualize your workflow with drag-and-drop Kanban columns. Move tasks from To-Do to Done effortlessly." },
-  { Icon: Calendar,    title: "Calendar View",       desc: "See all your deadlines in a monthly calendar. Plan ahead and never miss a due date again." },
-  { Icon: Bell,        title: "Smart Notifications", desc: "Get real-time alerts when tasks are updated or deadlines are approaching — so nothing slips through." },
-  { Icon: BarChart2,   title: "Velocity Analytics",  desc: "Track your team's completion rate week by week. Identify bottlenecks and improve delivery speed." },
-  { Icon: Users,       title: "Team Collaboration",  desc: "Invite teammates, assign tasks, and work in shared workspaces with live updates via Socket.IO." },
-  { Icon: Shield,      title: "Secure by default",   desc: "Passwords are bcrypt-hashed, JWTs are signed and blocklisted on logout, and reset tokens are SHA-256 hashed." },
-  { Icon: Zap,         title: "Real-time sync",      desc: "Powered by Flask-SocketIO, every task update reaches your whole team instantly — no refresh needed." },
+  { Icon: Kanban,      title: "Kanban Boards",       desc: "Visualize your workflow with drag-and-drop columns. Move tasks from To-Do to Done with ease." },
+  { Icon: Calendar,    title: "Calendar View",       desc: "See all deadlines in a monthly calendar. Plan ahead and never miss a due date again." },
+  { Icon: Timer,       title: "Time Tracking",       desc: "Track time spent on tasks with live timers, synced across your team in real time via Socket.IO." },
+  { Icon: Bell,        title: "Smart Notifications", desc: "Get real-time alerts when tasks are updated or deadlines are approaching." },
+  { Icon: BarChart2,   title: "Velocity Analytics",  desc: "Track your team's completion rate. Identify bottlenecks and improve delivery speed." },
+  { Icon: Users,       title: "Team Collaboration",  desc: "Invite teammates, assign tasks, and work in shared workspaces with live real-time updates." },
+  { Icon: Shield,      title: "Secure by default",   desc: "bcrypt passwords, signed JWTs blocklisted on logout, SHA-256 reset tokens — security built in." },
 ];
 
-const STATS = [
-  { icon: CheckSquare, value: "10,000+",   label: "Tasks organized" },
-  { icon: Users,       value: "500+",      label: "Teams onboarded" },
-  { icon: RefreshCw,   value: "Real-time", label: "Live collaboration" },
-  { icon: Lock,        value: "Secure",    label: "JWT + bcrypt auth" },
+const WHY = [
+  { Icon: Database, title: "Your data, your server",    desc: "Teevexa Ordo runs entirely on your infrastructure. No data reaches our servers after purchase." },
+  { Icon: Lock,     title: "One fee. No subscriptions.", desc: "Pay once for the license. No monthly per-seat charges that grow as your team grows." },
+  { Icon: Server,   title: "Full control",              desc: "Host on AWS, Azure, GCP, on-premise, or air-gapped. You choose where and how it runs." },
 ];
 
-const STEPS = [
-  { step: "01", title: "Create your workspace", desc: "Sign up and get a personal workspace in seconds — no credit card required." },
-  { step: "02", title: "Add tasks & assign them", desc: "Create task lists, set priorities and due dates, and assign work to your team." },
-  { step: "03", title: "Track & ship faster",    desc: "Monitor progress on the Kanban board, calendar, or dashboard — and deliver on time." },
+const HOW_IT_WORKS = [
+  { step: "01", title: "Try the demo — free",           desc: "Sign up right here and use the fully working product on our demo servers. No credit card, no time limit." },
+  { step: "02", title: "Purchase the license",          desc: "When you're ready, email us. You get the full source code and a one-time license to self-host." },
+  { step: "03", title: "Deploy on your infrastructure", desc: "We guide you through deployment or hand it to your dev team. Your instance, your data, your control." },
 ];
 
-const VALUES = [
-  { title: "Simplicity first",     desc: "The best tool is the one you actually use. Teevexa Ordo is intentionally simple — powerful where it matters, absent where it doesn't." },
-  { title: "Calm over chaos",      desc: "Productivity shouldn't feel stressful. Our design reduces noise, surfaces what matters, and keeps your team focused." },
-  { title: "Transparency",         desc: "Everyone on your team sees the same picture. No hidden state, no confused handoffs — clear ownership and visible progress." },
-  { title: "Built for real teams", desc: "Every feature is designed around how teams actually work, not how productivity gurus say they should." },
+const INCLUDED = [
+  { Icon: Package,     title: "Full source code",      desc: "Complete React + Flask codebase. No black-box binaries — read it, modify it, make it yours." },
+  { Icon: RefreshCw,   title: "2 months free support",  desc: "Bug fixes and direct support for 60 days after purchase — covering deployment and initial stabilization. Paid maintenance and feature upgrades available after that." },
+  { Icon: Wrench,      title: "Deployment assistance",  desc: "We help you get it running on your server the first time, step by step." },
+  { Icon: Headphones,  title: "Optional maintenance plan", desc: "After the free support period, renew for continued updates, new features, and priority support on a paid basis." },
 ];
 
 const FAQS = [
   {
-    question: "Is Teevexa Ordo really free?",
-    answer: "Yes — Teevexa Ordo is free to start with no credit card required. Create a workspace, invite your team, and use every feature without any trial limits.",
+    question: "What does 'self-hosted' mean?",
+    answer: "Self-hosted means you run Teevexa Ordo on your own server or cloud account (AWS, Azure, GCP, your own VPS, etc.). We give you the source code; you deploy it where you like. Your data never touches our infrastructure after purchase.",
   },
   {
-    question: "How do I invite teammates?",
-    answer: "From your workspace, open the Shareboard. You can invite people by email or copy a shareable invite link. Invited users join your workspace and can be assigned tasks immediately.",
+    question: "Can I try it before buying?",
+    answer: "Yes — that's exactly what the demo is for. Sign up here and use the full product on our demo servers with your real team. When you're confident it's the right fit, contact us about purchasing the self-hosted license.",
   },
   {
-    question: "Can I reset my password if I forget it?",
-    answer: "Yes. Click 'Forgot password?' on the login screen and enter your email. You'll receive a secure reset link valid for 1 hour.",
+    question: "What's included in the license?",
+    answer: "You get the complete source code (React frontend + Flask API), one year of bug fixes and feature updates, deployment assistance to get your instance running, and direct support access. After the first year you can renew the maintenance plan or keep using it as-is.",
   },
   {
-    question: "Where is Teevexa Ordo hosted?",
-    answer: "The Teevexa Ordo web app is hosted on Vercel and the API on Render. Both run on globally distributed infrastructure for low-latency access.",
+    question: "What do we need to host it?",
+    answer: "A Linux server or any cloud VM (1 vCPU, 1 GB RAM is enough for small teams), a PostgreSQL database, and a domain name. We provide a Docker setup and a step-by-step deployment guide.",
   },
   {
-    question: "Is my data secure?",
-    answer: "Yes. Passwords are hashed with bcrypt, JWTs are signed and blocklisted on logout, and password-reset tokens are SHA-256 hashed before storage. We do not sell or share your data.",
+    question: "Is there a per-seat fee after purchase?",
+    answer: "No. The license is a one-time fee regardless of how many users you add. Invite your entire company — the price doesn't change.",
+  },
+  {
+    question: "How do we purchase the license?",
+    answer: "Email us at sales@teevexa.com and tell us about your team size and use case. We'll send you a quote and a license agreement. Payment is processed via invoice.",
   },
 ];
 
@@ -88,7 +92,6 @@ const LandingPage = () => {
 
       {/* ── Hero ───────────────────────────────────────── */}
       <section className="relative min-h-[92vh] flex items-center justify-center text-center px-4 sm:px-6 bg-sidebar overflow-hidden">
-        {/* Subtle background glow — no photo */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-sidebar/80 to-transparent pointer-events-none" />
@@ -96,7 +99,7 @@ const LandingPage = () => {
         <div className="relative z-10 max-w-7xl mx-auto">
           <motion.div {...fadeUp(0)}>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
-              <Zap size={11} /> Now with real-time collaboration
+              <Server size={11} /> Self-hosted · One-time license
             </span>
           </motion.div>
 
@@ -104,16 +107,16 @@ const LandingPage = () => {
             className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight tracking-tight"
             {...fadeUp(0.1)}
           >
-            Your team&apos;s work,<br />
-            <span className="text-primary">finally organized.</span>
+            Own your project<br />
+            <span className="text-primary">management software.</span>
           </motion.h1>
 
           <motion.p
             className="mt-6 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed"
             {...fadeUp(0.2)}
           >
-            Teevexa Ordo brings tasks, deadlines, and teammates into one calm, focused workspace.
-            Stop juggling tools — start shipping.
+            One-time license. Hosted on your server. No monthly per-seat fees.
+            Your data stays on your infrastructure — forever.
           </motion.p>
 
           <motion.div
@@ -121,23 +124,24 @@ const LandingPage = () => {
             {...fadeUp(0.3)}
           >
             <Button size="lg" onClick={() => navigate("/signup")}>
-              Start for free — no card needed <ArrowRight size={16} className="ml-1" />
+              Try the demo — free <ArrowRight size={16} className="ml-1" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
-              className="border-white/30 text-white hover:bg-white/10"
-            >
-              See how it works
-            </Button>
+            <a href="mailto:sales@teevexa.com">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
+              >
+                Contact for licensing
+              </Button>
+            </a>
           </motion.div>
 
           <motion.div
             className="mt-10 flex flex-wrap items-center justify-center gap-6 text-white/50 text-sm"
             {...fadeUp(0.4)}
           >
-            {["Free to start", "No credit card", "Real-time sync", "Cancel anytime"].map((t) => (
+            {["Try before you buy", "Self-hosted", "One-time fee", "Source code included"].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-success" /> {t}
               </span>
@@ -150,37 +154,43 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── Stats strip ───────────────────────────────── */}
-      <section className="py-10 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-          {STATS.map(({ icon: Icon, value, label }, i) => (
-            <motion.div
-              key={label}
-              className="flex flex-col items-center gap-2 text-center"
-              {...fadeUp(i * 0.08)}
-            >
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Icon size={20} className="text-primary" />
-              </div>
-              <p className="text-2xl font-black text-text">{value}</p>
-              <p className="text-xs text-text-muted font-medium">{label}</p>
-            </motion.div>
-          ))}
+      {/* ── Why self-hosted ───────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Why self-hosted?</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">You pay once. You own it.</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {WHY.map(({ Icon, title, desc }, i) => (
+              <motion.div
+                key={title}
+                className="flex flex-col gap-4 p-7 bg-page rounded-2xl border border-border hover:border-primary/40 transition-colors"
+                {...fadeUp(i * 0.1)}
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Icon size={20} className="text-primary" />
+                </div>
+                <h3 className="font-semibold text-text">{title}</h3>
+                <p className="text-sm text-text-muted leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── How it works ──────────────────────────────── */}
-      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">How it works</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Three steps to clarity</h2>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">From demo to deployed in three steps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {STEPS.map(({ step, title, desc }, i) => (
+            {HOW_IT_WORKS.map(({ step, title, desc }, i) => (
               <motion.div
                 key={step}
-                className="relative flex flex-col gap-4 p-7 bg-page rounded-2xl border border-border"
+                className="relative flex flex-col gap-4 p-7 bg-surface rounded-2xl border border-border"
                 {...fadeUp(i * 0.1)}
               >
                 <span className="text-5xl font-black text-primary/10 leading-none">{step}</span>
@@ -193,20 +203,20 @@ const LandingPage = () => {
       </section>
 
       {/* ── Features ──────────────────────────────────── */}
-      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
+      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Features</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Everything your team needs</h2>
             <p className="mt-4 text-text-muted max-w-xl mx-auto">
-              No feature bloat. No paywalls. Just the right set of tools to help your team stay organized and deliver consistently.
+              Tasks, Kanban, calendar, time tracking, analytics, and real-time collaboration — all included in the license.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {FEATURES.map(({ Icon, title, desc }, i) => (
               <motion.div
                 key={title}
-                className="group flex flex-col gap-3 p-6 bg-surface rounded-2xl border border-border hover:border-primary/40 hover:shadow-card transition-all"
+                className="group flex flex-col gap-3 p-6 bg-page rounded-2xl border border-border hover:border-primary/40 hover:shadow-card transition-all"
                 {...fadeUp(i * 0.05)}
                 whileHover={{ y: -3 }}
               >
@@ -222,26 +232,27 @@ const LandingPage = () => {
       </section>
 
       {/* ── Team split ────────────────────────────────── */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-14">
           <motion.div className="lg:w-1/2" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
             <img src={TeamImage} alt="Team collaborating" className="w-full rounded-2xl shadow-card" />
           </motion.div>
           <div className="lg:w-1/2">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Built for teams</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Built for your company</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text leading-tight">
-              Less chaos,<br />more done.
+              Software you control.<br />Data you own.
             </h2>
             <p className="mt-5 text-text-muted leading-relaxed">
-              Teevexa Ordo gives every team member a clear picture of what&apos;s happening, what&apos;s next,
-              and who owns what — without the noise of endless status meetings.
+              Most project management tools are rented — you pay every month and your data lives on someone
+              else&apos;s servers. Teevexa Ordo flips that. You purchase the software once and run it on your
+              own infrastructure, on your terms.
             </p>
             <ul className="mt-6 space-y-3">
               {[
-                "Real-time task updates across your whole team",
-                "Shared Kanban boards with drag-and-drop",
-                "Deadline notifications so nothing falls through",
-                "Velocity tracking to improve sprint by sprint",
+                "No per-seat fees that grow with your team",
+                "Your data never leaves your servers",
+                "Meets data-residency and compliance requirements",
+                "Extend or customise the source code as needed",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-text-muted">
                   <CheckCircle2 size={16} className="text-success mt-0.5 flex-shrink-0" />
@@ -249,34 +260,42 @@ const LandingPage = () => {
                 </li>
               ))}
             </ul>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap gap-3">
               <Button onClick={() => navigate("/signup")}>
-                Get started free <ArrowRight size={15} className="ml-1" />
+                Try it free <ArrowRight size={15} className="ml-1" />
               </Button>
+              <a href="mailto:sales@teevexa.com">
+                <Button variant="outline">Contact sales</Button>
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Values ────────────────────────────────────── */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-page">
+      {/* ── What's included ───────────────────────────── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface border-t border-border">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">What we stand for</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Built on principles, not hype.</h2>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">License</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">What&apos;s in the box</h2>
             <p className="mt-4 text-text-muted max-w-xl mx-auto">
-              Every design and product decision at Teevexa Ordo comes back to these four ideas.
+              Every Teevexa Ordo license includes everything you need to get up and running on your own server.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {VALUES.map(({ title, desc }, i) => (
+            {INCLUDED.map(({ Icon, title, desc }, i) => (
               <motion.div
                 key={title}
-                className="bg-surface rounded-2xl border border-border p-7 hover:border-primary/40 transition-colors"
+                className="flex items-start gap-4 p-6 bg-page rounded-2xl border border-border hover:border-primary/40 transition-colors"
                 {...fadeUp(i * 0.08)}
               >
-                <h3 className="font-semibold text-text mb-2">{title}</h3>
-                <p className="text-sm text-text-muted leading-relaxed">{desc}</p>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Icon size={20} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-text mb-1">{title}</h3>
+                  <p className="text-sm text-text-muted leading-relaxed">{desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -284,19 +303,19 @@ const LandingPage = () => {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────── */}
-      <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-surface border-t border-border">
+      <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-page border-t border-border">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">FAQ</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Common questions</h2>
             <p className="mt-4 text-text-muted">
-              Quick answers before you sign up. Still unsure?{" "}
-              <a href="mailto:support@teevexa.com" className="text-primary hover:underline">Email us.</a>
+              Still have questions?{" "}
+              <a href="mailto:sales@teevexa.com" className="text-primary hover:underline">Email us.</a>
             </p>
           </div>
-          <div className="space-y-3">
+          <div className="max-w-7xl mx-auto space-y-3">
             {FAQS.map((faq, i) => (
-              <div key={i} className="bg-page rounded-xl border border-border overflow-hidden">
+              <div key={i} className="bg-surface rounded-xl border border-border overflow-hidden">
                 <button
                   onClick={() => setOpenFAQ(openFAQ === i ? null : i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left text-sm font-medium text-text hover:bg-surface-muted transition-colors"
@@ -319,29 +338,31 @@ const LandingPage = () => {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────── */}
-      <section className="py-28 px-4 sm:px-6 bg-page">
+      <section className="py-28 px-4 sm:px-6 bg-sidebar">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-6">
             <Rocket size={30} className="text-primary" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-text">
-            Ready to work better together?
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+            Ready to own your software?
           </h2>
-          <p className="mt-4 text-text-muted text-lg max-w-xl mx-auto">
-            Join teams already using Teevexa Ordo to ship faster, stay organized, and stress less.
-            Free forever for small teams.
+          <p className="mt-4 text-white/60 text-lg max-w-xl mx-auto">
+            Try the demo today — free, no card, no time limit. When you&apos;re ready to purchase
+            the license and host it yourself, we&apos;re one email away.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" onClick={() => navigate("/signup")}>
-              Create your free account <ArrowRight size={16} className="ml-1" />
+              Try the demo free <ArrowRight size={16} className="ml-1" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => document.getElementById("faq")?.scrollIntoView({ behavior: "smooth" })}
-            >
-              Have a question?
-            </Button>
+            <a href="mailto:sales@teevexa.com">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
+              >
+                Contact for licensing
+              </Button>
+            </a>
           </div>
         </div>
       </section>

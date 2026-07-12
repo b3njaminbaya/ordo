@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const SOCKET_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "https://taskly-app-9u0e.onrender.com";
+  import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
 
 export const socket = io(SOCKET_URL, {
   transports: ["websocket", "polling"],

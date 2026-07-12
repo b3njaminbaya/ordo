@@ -38,7 +38,7 @@ oauthlib==3.2.2
 packaging==24.2
 pipenv==2024.4.1
 platformdirs==4.3.6
-psycopg2-binary==2.9.10
+psycopg2-binary>=2.9.12
 PyJWT>=2.11.0
 PySocks==1.7.1
 python-dotenv==1.0.1

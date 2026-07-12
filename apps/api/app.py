@@ -70,14 +70,14 @@ app.config["MAIL_SUPPRESS_SEND"]  = os.getenv("FLASK_ENV") == "testing"
 
 mail = Mail(app)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///taskly.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///teevexa-ordo.db")
 app.config["SQLALCHEMY_DATABASE_URI"]        = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 app.config["JWT_SECRET_KEY"]          = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
 app.config["SECRET_KEY"]              = os.getenv("SECRET_KEY", "dev-secret-change-me")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
-app.config["FRONTEND_URL"]            = os.getenv("FRONTEND_URL", "https://taskly-app-iota.vercel.app")
+app.config["FRONTEND_URL"]            = os.getenv("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -103,7 +103,7 @@ jwt = JWTManager(app)
 from views import (
     user_bp, auth_bp, tasklist_bp, task_bp,
     task_assignment_bp, comments_bp, notifications_bp, task_stats_bp,
-    subtasks_bp, attachments_bp, recurring_bp,
+    subtasks_bp, attachments_bp, recurring_bp, time_entries_bp,
 )
 import views.realtime  # registers Socket.IO event handlers
 
@@ -118,6 +118,7 @@ app.register_blueprint(task_stats_bp)
 app.register_blueprint(subtasks_bp)
 app.register_blueprint(attachments_bp)
 app.register_blueprint(recurring_bp)
+app.register_blueprint(time_entries_bp)
 
 
 @jwt.token_in_blocklist_loader

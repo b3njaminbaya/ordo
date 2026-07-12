@@ -1,7 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 
-/** Base ESLint config for all Taskly JS/TS packages */
+/** Base ESLint config for all Teevexa Ordo JS/TS packages */
 export default [
   js.configs.recommended,
   {

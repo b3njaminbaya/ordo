@@ -1,4 +1,4 @@
-import sharedConfig from "@taskly/config-eslint/react";
+import sharedConfig from "@teevexa-ordo/config-eslint/react";
 
 export default [
   { ignores: ["dist", "node_modules"] },
