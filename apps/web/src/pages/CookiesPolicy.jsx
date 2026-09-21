@@ -1,53 +1,39 @@
-import { Cookie, Lock, BarChart2, Settings2, Zap, ChevronRight, Mail } from "lucide-react";
+import { Cookie, Lock, Settings2, ChevronRight, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const COOKIE_TYPES = [
   {
     Icon: Lock,
-    name: "Essential Cookies",
+    name: "Sign-in (essential)",
     required: true,
-    desc: "These cookies are strictly necessary for Teevexa Ordo to function. They handle user authentication (JWT tokens), maintain your session across pages, and protect against cross-site request forgery. You cannot opt out of these cookies.",
-    examples: ["Authentication tokens", "Session identifiers", "CSRF protection tokens"],
+    desc: "Ordo does not set cookies. To keep you signed in it stores authentication tokens in your browser's local storage. They are required for the app to work and are removed when you sign out.",
+    examples: ["Access token", "Refresh token"],
   },
   {
     Icon: Settings2,
-    name: "Functional Cookies",
+    name: "Preferences",
     required: false,
-    desc: "Functional cookies remember your preferences and settings so you don't have to reconfigure them each visit. They personalize your experience without being used for advertising.",
-    examples: ["Theme preference", "Notification settings", "Dashboard layout"],
-  },
-  {
-    Icon: BarChart2,
-    name: "Analytics Cookies",
-    required: false,
-    desc: "We use analytics cookies to understand how our platform is used in aggregate — which pages are visited most, where users drop off, and which features are most popular. This data helps us build a better product.",
-    examples: ["Page view counts", "Session duration", "Feature interaction rates"],
-  },
-  {
-    Icon: Zap,
-    name: "Performance Cookies",
-    required: false,
-    desc: "These cookies collect technical data about how our services perform. They help us identify and fix issues like slow page loads, API errors, and browser-specific bugs before they affect more users.",
-    examples: ["Load time measurements", "Error tracking", "API response monitoring"],
+    desc: "Your chosen colour theme is kept in local storage so it is applied before the page loads. It is never used for advertising or tracking.",
+    examples: ["Theme preference (light, dark or system)"],
   },
 ];
 
 const FAQ = [
   {
-    q: "Can I use Teevexa Ordo without accepting cookies?",
-    a: "Essential cookies are required for the platform to function — you cannot opt out of them. All other cookie categories are optional and can be declined from the banner or your browser settings.",
+    q: "Can I use Ordo without accepting cookies?",
+    a: "Yes. Ordo does not set cookies and has no cookie banner. It does need to store a sign-in token in your browser's local storage to keep you signed in.",
   },
   {
-    q: "How do I change my cookie preferences?",
-    a: "You can manage cookies in your browser settings at any time. Most browsers let you view, block, or delete individual cookies. Note that blocking essential cookies will prevent you from signing in.",
+    q: "How do I clear what is stored?",
+    a: "Sign out (this removes your tokens), or clear this site's data in your browser settings. Clearing it signs you out and resets your theme.",
   },
   {
-    q: "Do you use third-party cookies?",
-    a: "Teevexa Ordo does not currently use advertising or social media tracking cookies. Any third-party services we integrate are evaluated for privacy compliance before use.",
+    q: "Do you use analytics or third-party trackers?",
+    a: "No. There are no advertising, social-media or analytics trackers. Server-side error monitoring may record technical details (never passwords) to help us fix bugs.",
   },
   {
-    q: "How long do cookies last?",
-    a: "Session cookies expire when you close your browser. Persistent cookies (like remembered login sessions) last for up to 30 days or until you log out, whichever comes first.",
+    q: "How long is my sign-in remembered?",
+    a: "Access tokens last up to 7 days and are renewed automatically while you use the app, until you sign out or change your password.",
   },
 ];
 
@@ -65,7 +51,7 @@ const CookiesPolicy = () => (
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">Cookies Policy</h1>
         <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-          We believe in full transparency. Here's a plain-English breakdown of every cookie Teevexa Ordo uses and exactly why.
+          We believe in full transparency. Here's a plain-English breakdown of every cookie Ordo uses and exactly why.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm text-white/40">
           <span>Effective: May 2026</span>
@@ -156,7 +142,7 @@ const CookiesPolicy = () => (
           <p className="text-xs text-text-muted mt-0.5">Contact us and we'll respond within 5 business days.</p>
         </div>
         <a
-          href="mailto:support@teevexa.com"
+          href="mailto:b3njaminbaya@gmail.com"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <Mail size={14} /> Contact Us

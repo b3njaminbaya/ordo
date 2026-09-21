@@ -23,11 +23,11 @@ class User(db.Model, SerializerMixin):
     role = db.Column(db.String(20), default="user")
     notifications_enabled = db.Column(db.Boolean, default=True) 
     workspace_id = db.Column(db.String(36), db.ForeignKey('workspaces.id', ondelete="SET NULL"), nullable=True) 
-    #is_verified = db.Column(db.Boolean, default=False)
-    #verification_token = db.Column(db.String(100), nullable=True)
     profile_picture = db.Column(db.Text, nullable=True)
     reset_token = db.Column(db.String(100), nullable=True)
     token_expiry = db.Column(db.DateTime, nullable=True)
+    # Tokens issued before this moment are rejected (set on password change/reset).
+    password_changed_at = db.Column(db.DateTime, nullable=True)
 
     tasklists = db.relationship("TaskList", back_populates="user", cascade="all, delete-orphan")
     tasks_assigned = db.relationship("TaskAssignment", back_populates="user", cascade="all, delete-orphan")
@@ -53,6 +53,9 @@ class Workspace(db.Model, SerializerMixin):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     name = db.Column(db.String(100), unique=True, nullable=False)
+    # User who administers the workspace (invites/removals). Deliberately not a
+    # foreign key: users.workspace_id already points the other way.
+    owner_id = db.Column(db.Integer, nullable=True)
     users = db.relationship('User', backref='workspace', cascade="all, delete-orphan", lazy=True)
 
     serialize_rules = ("-users.workspace",)
@@ -91,18 +94,6 @@ class TaskList(db.Model, SerializerMixin):
     )
 
 
-def preload_task_templates():
-    template_names = ["To-Do", "Doing", "Testing", "Done"]
-    
-    for name in template_names:
-        existing_template = TaskList.query.filter_by(name=name, is_template=True).first()
-        if not existing_template:
-            template = TaskList(name=name, is_template=True)
-            db.session.add(template)
-    
-    db.session.commit()
-
-
 class Task(db.Model, SerializerMixin):
     __tablename__ = "tasks"
 
@@ -112,9 +103,11 @@ class Task(db.Model, SerializerMixin):
     due_date = db.Column(db.DateTime, nullable=True)
     priority = db.Column(priority_enum, nullable=False, default="medium")
     status = db.Column(status_enum, nullable=False, default="todo")
-    position = db.Column(db.Integer, nullable=False, default=0)
+    position = db.Column(db.Integer, nullable=False, default=0)        # order inside a status column
+    list_position = db.Column(db.Integer, nullable=False, default=0, server_default="0")  # order inside a list
     created_at = db.Column(db.DateTime, default=_utcnow)
     updated_at = db.Column(db.DateTime, default=_utcnow, onupdate=_utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
 
     tasklist_id = db.Column(db.Integer, db.ForeignKey("tasklists.id", ondelete="CASCADE"), nullable=False)
     parent_task_id = db.Column(db.Integer, db.ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
@@ -123,8 +116,12 @@ class Task(db.Model, SerializerMixin):
     comments     = db.relationship("Comment",         back_populates="task", cascade="all, delete-orphan")
     notifications= db.relationship("Notification",    backref="task",        cascade="all, delete-orphan")
     attachments  = db.relationship("TaskAttachment",  back_populates="task", cascade="all, delete-orphan")
+    # Deleting a parent deletes its subtasks (the FK alone would orphan them).
+    subtasks     = db.relationship("Task", backref=db.backref("parent", remote_side=[id]), cascade="all")
 
     serialize_rules = (
+        "-subtasks",
+        "-parent",
         "-tasklist",
         "-assignments",
         "-comments.task",
@@ -256,6 +253,12 @@ class TimeEntry(db.Model, SerializerMixin):
 
     __table_args__ = (
         db.Index("ix_time_entries_user_ended_at", "user_id", "ended_at"),
+        # At most one running timer per user, enforced by the database.
+        db.Index(
+            "uq_time_entries_one_active", "user_id", unique=True,
+            postgresql_where=db.text("ended_at IS NULL"),
+            sqlite_where=db.text("ended_at IS NULL"),
+        ),
     )
 
     serialize_rules = ("-user.time_entries",)

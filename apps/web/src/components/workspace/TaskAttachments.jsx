@@ -3,13 +3,13 @@ import {
   Paperclip, FileText, Image, File, Download, Trash2, Upload, AlertCircle,
 } from "lucide-react";
 import api from "../../api/axios";
+import { errorMessage } from "../../api/errors";
 import { useAuth } from "../../context/AuthContext";
-import { Spinner } from "../ui";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
+import { Spinner, useToast } from "../ui";
+import { formatRelTime } from "../../utils/time";
 
 const ACCEPTED = [
-  "image/png","image/jpeg","image/gif","image/webp","image/svg+xml",
+  "image/png","image/jpeg","image/gif","image/webp",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -35,19 +35,9 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatRelTime(iso) {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return new Date(iso).toLocaleDateString();
-}
-
 export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) {
   const { user } = useAuth();
+  const toast = useToast();
   const fileRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -66,8 +56,8 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
       const list = Array.isArray(res.data) ? res.data : [];
       setAttachments(list);
       onCountChange?.(list.length);
-    } catch {
-      // non-fatal
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't load attachments."), "danger");
     } finally {
       setLoading(false);
     }
@@ -97,7 +87,7 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
       });
       updateAttachments([...attachments, res.data]);
     } catch (err) {
-      setUploadError(err.response?.data?.error || "Upload failed. Please try again.");
+      setUploadError(errorMessage(err, "Upload failed. Please try again."));
     } finally {
       setUploading(false);
     }
@@ -108,18 +98,15 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
     try {
       await api.delete(`/tasks/${taskId}/attachments/${attachmentId}`);
       updateAttachments(attachments.filter((a) => a.id !== attachmentId));
-    } catch {
-      // non-fatal — item stays in list
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't delete the attachment."), "danger");
     } finally {
       setDeletingId(null);
     }
   };
 
   const canDelete = (a) =>
-    a.uploaded_by === user?.id || taskOwnerId === user?.id;
-
-  const downloadUrl = (a) =>
-    `${API_BASE}/tasks/attachments/${a.id}/download`;
+    a.uploaded_by === user?.id || taskOwnerId === user?.id || Boolean(user?.workspace?.is_owner);
 
   return (
     <div>
@@ -140,6 +127,7 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
         {attachments.length < 10 && (
           <>
             <button
+              type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
@@ -198,13 +186,11 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
                 </div>
 
                 {/* Actions */}
-                <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a
-                    href={downloadUrl(a)}
-                    download={a.original_name}
-                    onClick={(e) => {
-                      // Use fetch + blob so the auth token is sent
-                      e.preventDefault();
+                <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Fetch as a blob so the auth token is sent with the request.
                       api.get(`/tasks/attachments/${a.id}/download`, { responseType: "blob" })
                         .then((res) => {
                           const url = URL.createObjectURL(res.data);
@@ -214,18 +200,18 @@ export default function TaskAttachments({ taskId, taskOwnerId, onCountChange }) 
                           link.click();
                           URL.revokeObjectURL(url);
                         })
-                        .catch(() => {});
+                        .catch((err) => toast(errorMessage(err, "Couldn't download the file."), "danger"));
                     }}
                     className="p-1 rounded text-text-muted hover:text-primary hover:bg-primary/10 transition-colors"
-                    aria-label="Download"
+                    aria-label={`Download ${a.original_name}`}
                   >
                     <Download size={13} />
-                  </a>
+                  </button>
                   {canDelete(a) && !isDeleting && (
                     <button
                       onClick={() => handleDelete(a.id)}
                       className="p-1 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
-                      aria-label="Delete attachment"
+                      aria-label={`Delete ${a.original_name}`}
                     >
                       <Trash2 size={13} />
                     </button>

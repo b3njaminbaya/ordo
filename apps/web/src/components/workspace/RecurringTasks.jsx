@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Plus, Pencil, Trash2, Pause, Play, X, AlertCircle } from "lucide-react";
 import api from "../../api/axios";
-import { useAuth } from "../../context/AuthContext";
-import { Button, Spinner, Alert, Modal, PriorityBadge } from "../ui";
+import { errorMessage } from "../../api/errors";
+import { Button, Spinner, Alert, Modal, PriorityBadge, useToast } from "../ui";
 
 const RULES = [
   { value: "daily",   label: "Daily" },
@@ -26,14 +26,15 @@ function formatNextRun(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
   const diff = d - Date.now();
-  const h = Math.round(diff / 3600000);
-  if (h < 24) return `in ~${h}h`;
+  if (diff <= 0) return "within the hour";
+  const h = Math.ceil(diff / 3600000);
+  if (h < 24) return `in about ${h} hour${h === 1 ? "" : "s"}`;
   const days = Math.round(diff / 86400000);
-  return `in ${days}d (${d.toLocaleDateString()})`;
+  return `in ${days} day${days === 1 ? "" : "s"} (${d.toLocaleDateString()})`;
 }
 
 function RecurringForm({ initial, tasklists, onSave, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
+  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial, description: initial?.description ?? "", tasklist_id: initial?.tasklist_id ?? "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +52,7 @@ function RecurringForm({ initial, tasklists, onSave, onClose }) {
         priority: form.priority,
         recurrence_rule: form.recurrence_rule,
         recurrence_interval: parseInt(form.recurrence_interval, 10) || 1,
-        tasklist_id: form.tasklist_id || undefined,
+        tasklist_id: form.tasklist_id ? Number(form.tasklist_id) : undefined,
       };
       if (initial?.id) {
         const res = await api.patch(`/recurring-tasks/${initial.id}`, payload);
@@ -62,7 +63,7 @@ function RecurringForm({ initial, tasklists, onSave, onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || "Save failed.");
+      setError(errorMessage(err, "Save failed."));
     } finally {
       setSaving(false);
     }
@@ -80,27 +81,27 @@ function RecurringForm({ initial, tasklists, onSave, onClose }) {
       )}
 
       <div>
-        <label className={labelCls}>Title *</label>
-        <input className={inputCls} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Weekly report" />
+        <label htmlFor="rt-title" className={labelCls}>Title *</label>
+        <input id="rt-title" maxLength={100} autoFocus className={inputCls} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Weekly report" />
       </div>
 
       <div>
-        <label className={labelCls}>Description</label>
-        <textarea className={`${inputCls} resize-none`} rows={2} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Optional details…" />
+        <label htmlFor="rt-desc" className={labelCls}>Description</label>
+        <textarea id="rt-desc" className={`${inputCls} resize-none`} rows={2} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Optional details…" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Priority</label>
-          <select className={inputCls} value={form.priority} onChange={(e) => set("priority", e.target.value)}>
+          <label htmlFor="rt-prio" className={labelCls}>Priority</label>
+          <select id="rt-prio" className={inputCls} value={form.priority} onChange={(e) => set("priority", e.target.value)}>
             {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
           </select>
         </div>
 
         <div>
-          <label className={labelCls}>Task List</label>
-          <select className={inputCls} value={form.tasklist_id} onChange={(e) => set("tasklist_id", e.target.value)}>
-            <option value="">Default list</option>
+          <label htmlFor="rt-list" className={labelCls}>Task List</label>
+          <select id="rt-list" className={inputCls} value={form.tasklist_id} onChange={(e) => set("tasklist_id", e.target.value)}>
+            <option value="">My first list</option>
             {tasklists.map((tl) => <option key={tl.id} value={tl.id}>{tl.name}</option>)}
           </select>
         </div>
@@ -108,16 +109,17 @@ function RecurringForm({ initial, tasklists, onSave, onClose }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Repeats</label>
-          <select className={inputCls} value={form.recurrence_rule} onChange={(e) => set("recurrence_rule", e.target.value)}>
+          <label htmlFor="rt-rule" className={labelCls}>Repeats</label>
+          <select id="rt-rule" className={inputCls} value={form.recurrence_rule} onChange={(e) => set("recurrence_rule", e.target.value)}>
             {RULES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
         </div>
 
         {form.recurrence_rule === "custom" && (
           <div>
-            <label className={labelCls}>Every N days</label>
+            <label htmlFor="rt-interval" className={labelCls}>Every N days</label>
             <input
+              id="rt-interval"
               type="number" min={1} max={365}
               className={inputCls}
               value={form.recurrence_interval}
@@ -138,7 +140,7 @@ function RecurringForm({ initial, tasklists, onSave, onClose }) {
 }
 
 export default function RecurringTasks() {
-  const { user } = useAuth();
+  const toast = useToast();
   const [items, setItems]         = useState([]);
   const [tasklists, setTasklists] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -156,8 +158,8 @@ export default function RecurringTasks() {
       ]);
       setItems(Array.isArray(rtRes.data) ? rtRes.data : []);
       setTasklists(Array.isArray(tlRes.data) ? tlRes.data : []);
-    } catch {
-      setError("Failed to load recurring tasks.");
+    } catch (err) {
+      setError(errorMessage(err, "Failed to load recurring tasks."));
     } finally {
       setLoading(false);
     }
@@ -178,8 +180,8 @@ export default function RecurringTasks() {
     try {
       const res = await api.patch(`/recurring-tasks/${item.id}`, { active: !item.active });
       setItems((prev) => prev.map((r) => (r.id === item.id ? res.data : r)));
-    } catch {
-      // non-fatal
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't update the template."), "danger");
     } finally {
       setTogglingId(null);
     }
@@ -191,8 +193,8 @@ export default function RecurringTasks() {
     try {
       await api.delete(`/recurring-tasks/${id}`);
       setItems((prev) => prev.filter((r) => r.id !== id));
-    } catch {
-      // non-fatal
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't delete the template."), "danger");
     } finally {
       setDeletingId(null);
     }
@@ -205,7 +207,7 @@ export default function RecurringTasks() {
   if (loading) return <div className="flex justify-center py-20"><Spinner /></div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -276,7 +278,8 @@ export default function RecurringTasks() {
                   )}
                   <p className="text-xs text-text-muted mt-1">
                     <span className="font-medium text-text">{freqLabel}</span>
-                    {" · "}Next run: <span className="font-medium">{formatNextRun(item.next_run_at)}</span>
+                    {item.tasklist_name && <> · in <span className="font-medium text-text">{item.tasklist_name}</span></>}
+                    {item.active ? <>{" · "}Next: <span className="font-medium">{formatNextRun(item.next_run_at)}</span></> : " · Paused"}
                   </p>
                 </div>
 
@@ -286,6 +289,7 @@ export default function RecurringTasks() {
                     onClick={() => handleToggleActive(item)}
                     disabled={togglingId === item.id}
                     title={item.active ? "Pause" : "Resume"}
+                    aria-label={item.active ? `Pause ${item.title}` : `Resume ${item.title}`}
                     className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors"
                   >
                     {togglingId === item.id ? <Spinner size="xs" /> : item.active ? <Pause size={14} /> : <Play size={14} />}
@@ -293,6 +297,7 @@ export default function RecurringTasks() {
                   <button
                     onClick={() => openEdit(item)}
                     title="Edit"
+                    aria-label={`Edit ${item.title}`}
                     className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors"
                   >
                     <Pencil size={14} />
@@ -301,6 +306,7 @@ export default function RecurringTasks() {
                     onClick={() => handleDelete(item.id)}
                     disabled={deletingId === item.id}
                     title="Delete"
+                    aria-label={`Delete ${item.title}`}
                     className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
                   >
                     {deletingId === item.id ? <Spinner size="xs" /> : <Trash2 size={14} />}

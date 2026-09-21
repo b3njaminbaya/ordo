@@ -1,13 +1,14 @@
 import { io } from "socket.io-client";
+import { API_BASE_URL } from "./config";
 
-const SOCKET_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
-
-export const socket = io(SOCKET_URL, {
+// The server only accepts authenticated connections and decides which rooms you
+// join, so the token is sent on every (re)connect — never cached.
+export const socket = io(API_BASE_URL || undefined, {
   transports: ["websocket", "polling"],
-  withCredentials: true,
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 2000,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 15000,
+  auth: (cb) => cb({ token: localStorage.getItem("access_token") }),
 });

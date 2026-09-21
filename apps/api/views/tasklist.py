@@ -1,161 +1,167 @@
-from flask import Blueprint, request, jsonify
-from models import db, TaskList, Task, User
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
 
+from access import (
+    can_access_tasklist, current_user, visible_tasklist_query, workspace_id_for_owner,
+)
+from files import attachment_dir, attachment_filenames_for_lists, remove_files
+from models import db, Task, TaskList, User
+from serializers import serialize_tasks
+from validation import int_list, json_body
 
 tasklist_bp = Blueprint('tasklist', __name__, url_prefix='/tasklists')
 
 
-def _serialize_task(task):
-    return {
-        "id": task.id,
-        "title": task.title,
-        "description": task.description,
-        "due_date": task.due_date.isoformat() if task.due_date else None,
-        "priority": task.priority,
-        "status": task.status,
-        "position": task.position,
-        "assignments": [
-            {"user_id": a.user_id, "username": a.user.username if a.user else "Unknown"}
-            for a in task.assignments
-        ],
+def _serialize_list(tasklist, with_tasks=True):
+    owner = db.session.get(User, tasklist.user_id)
+    out = {
+        "id": tasklist.id,
+        "name": tasklist.name,
+        "user_id": tasklist.user_id,
+        "owner_name": owner.username if owner else None,
     }
+    if with_tasks:
+        tasks = sorted(
+            (t for t in tasklist.tasks if t.parent_task_id is None),
+            key=lambda t: (t.list_position, t.id),
+        )
+        out["tasks"] = serialize_tasks(tasks)
+    return out
 
 
-def _workspace_tasklist_query(user):
-    """Return a query for all non-template tasklists visible to this user."""
-    base = TaskList.query.filter(TaskList.is_template == False)  # noqa: E712
-    if user.workspace_id:
-        member_ids = db.session.query(User.id).filter_by(workspace_id=user.workspace_id)
-        return base.filter(TaskList.user_id.in_(member_ids))
-    return base.filter(TaskList.user_id == user.id)
+def _valid_name(data):
+    name = data.get("name")
+    name = name.strip() if isinstance(name, str) else ""
+    if not name:
+        return None, "Task list name is required"
+    if len(name) > 120:
+        return None, "Task list name must be 120 characters or fewer"
+    return name, None
+
+
+def _name_taken(user_id, name, exclude_id=None):
+    q = TaskList.query.filter(
+        TaskList.user_id == user_id,
+        TaskList.is_template.isnot(True),
+        db.func.lower(TaskList.name) == name.lower(),
+    )
+    if exclude_id is not None:
+        q = q.filter(TaskList.id != exclude_id)
+    return q.first() is not None
+
+
+def _announce(tasklist_owner_id):
+    ws = workspace_id_for_owner(tasklist_owner_id)
+    if ws:
+        from views.realtime import emit_tasklist_changed
+        emit_tasklist_changed(ws)
 
 
 @tasklist_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_all_tasklist():
-    user = db.session.get(User, int(get_jwt_identity()))
+    user = current_user()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 100, type=int)
-
-    tasklists = _workspace_tasklist_query(user).paginate(page=page, per_page=per_page, error_out=False)
-
-    return jsonify([
-        {
-            "id": tl.id,
-            "name": tl.name,
-            "tasks": [_serialize_task(t) for t in tl.tasks],
-        }
-        for tl in tasklists.items
-    ]), 200
+    per_page = min(request.args.get("per_page", 100, type=int), 200)
+    tasklists = (
+        visible_tasklist_query(user)
+        .order_by(TaskList.id)
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    return jsonify([_serialize_list(tl) for tl in tasklists.items]), 200
 
 
 @tasklist_bp.route('/<int:tasklist_id>', methods=['GET'])
 @jwt_required()
 def get_tasklist(tasklist_id):
-    user = db.session.get(User, int(get_jwt_identity()))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
+    user = current_user()
     tasklist = db.session.get(TaskList, tasklist_id)
-    if not tasklist:
+    if not user or not can_access_tasklist(user, tasklist) or tasklist.is_template:
         return jsonify({"error": "Task list not found"}), 404
-
-    # Allow access if owner or same workspace member
-    if tasklist.user_id != user.id:
-        owner = db.session.get(User, tasklist.user_id)
-        if not owner or owner.workspace_id != user.workspace_id:
-            return jsonify({"error": "Unauthorized"}), 403
-
-    return jsonify({
-        "id": tasklist.id,
-        "name": tasklist.name,
-        "tasks": [_serialize_task(t) for t in tasklist.tasks],
-    }), 200
-
-
-@tasklist_bp.route('/templates', methods=['GET'])
-@jwt_required()
-def get_tasklist_templates():
-    templates = TaskList.query.filter_by(is_template=True).all()
-
-    return jsonify([
-        {
-            "id": template.id,
-            "name": template.name,
-            "tasks": [_serialize_task(t) for t in template.tasks],
-        }
-        for template in templates
-    ]), 200
+    return jsonify(_serialize_list(tasklist)), 200
 
 
 @tasklist_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_tasklist():
-    user_id = get_jwt_identity()
-    data = request.get_json()
+    user = current_user()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    if not data or not data.get('name'):
-        return jsonify({"error": "Task list name is required"}), 400
-    
-    if 'template_id' in data:
-        template = TaskList.query.filter_by(id=data['template_id'], is_template=True).first()
-        if not template:
-            return jsonify({"error": "Template not found"}), 404
-        
-        new_tasklist = TaskList(name=template.name, user_id=user_id)
-        new_tasklist.tasks = [Task(title=task.title, description=task.description) for task in template.tasks]
-        db.session.add(new_tasklist)
-        db.session.commit()
-    else:
-        new_tasklist = TaskList(name=data['name'], user_id=user_id)
-        db.session.add(new_tasklist)
-        db.session.commit()
+    name, err = _valid_name(json_body())
+    if err:
+        return jsonify({"error": err}), 400
+    if _name_taken(user.id, name):
+        return jsonify({"error": "You already have a list with that name"}), 409
+
+    tasklist = TaskList(name=name, user_id=user.id)
+    db.session.add(tasklist)
+    db.session.commit()
+    _announce(user.id)
 
     return jsonify({
-        "message": "Task list created successfully", 
-        "id": new_tasklist.id,
-        "name": new_tasklist.name,
-        "tasks": []
+        "message": "Task list created successfully",
+        **_serialize_list(tasklist),
     }), 201
 
-# Update a task list
+
 @tasklist_bp.route('/<int:tasklist_id>', methods=['PUT'])
 @jwt_required()
 def update_tasklist(tasklist_id):
-    user_id = get_jwt_identity()
-    tasklist = TaskList.query.filter_by(id=tasklist_id, user_id=user_id).first()
-
+    user = current_user()
+    tasklist = TaskList.query.filter_by(id=tasklist_id, user_id=user.id if user else -1).first()
     if not tasklist:
         return jsonify({"error": "Task list not found"}), 404
 
-    data = request.get_json()
-    new_name = data.get('name')
-
-    if not new_name:
-        return jsonify({"error": "Task list name is required"}), 400
-
-    existing = TaskList.query.filter_by(name=new_name, user_id=user_id).first()
-    if existing and existing.id != tasklist_id:
+    name, err = _valid_name(json_body())
+    if err:
+        return jsonify({"error": err}), 400
+    if _name_taken(user.id, name, exclude_id=tasklist_id):
         return jsonify({"error": "Task list name already exists"}), 400
 
-    tasklist.name = new_name
+    tasklist.name = name
     db.session.commit()
-    return jsonify({"message": "Task list updated successfully"}), 200
+    _announce(user.id)
+    return jsonify({"message": "Task list updated successfully", "name": name}), 200
 
-# Delete a task list
+
+@tasklist_bp.route('/<int:tasklist_id>/reorder', methods=['PATCH'])
+@jwt_required()
+def reorder_tasklist(tasklist_id):
+    """Persist the order of tasks inside one list (top to bottom)."""
+    user = current_user()
+    tasklist = db.session.get(TaskList, tasklist_id)
+    if not user or not can_access_tasklist(user, tasklist):
+        return jsonify({"error": "Task list not found"}), 404
+
+    order = int_list(json_body().get("order"))
+    if order is None or len(set(order)) != len(order):
+        return jsonify({"error": "order must be a list of unique task ids"}), 400
+
+    tasks = {t.id: t for t in Task.query.filter_by(tasklist_id=tasklist.id, parent_task_id=None)}
+    if not set(order) <= set(tasks):
+        return jsonify({"error": "order contains tasks that are not in this list"}), 400
+
+    for pos, task_id in enumerate(order):
+        tasks[task_id].list_position = pos
+    db.session.commit()
+    return jsonify({"message": "Reordered", "count": len(order)}), 200
+
+
 @tasklist_bp.route('/<int:tasklist_id>', methods=['DELETE'])
 @jwt_required()
 def delete_tasklist(tasklist_id):
-    user_id = get_jwt_identity()
-    tasklist = TaskList.query.filter_by(id=tasklist_id, user_id=user_id).first()
-
+    user = current_user()
+    tasklist = TaskList.query.filter_by(id=tasklist_id, user_id=user.id if user else -1).first()
     if not tasklist:
         return jsonify({"error": "Task list not found"}), 404
 
+    files = attachment_filenames_for_lists([tasklist.id])
     db.session.delete(tasklist)
     db.session.commit()
+    remove_files(attachment_dir(), files)
+    _announce(user.id)
     return jsonify({"message": "Task list deleted successfully"}), 200

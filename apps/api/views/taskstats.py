@@ -1,80 +1,78 @@
-from flask import Blueprint, jsonify, request
-from models import db, Task, TaskList, User
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
+
+from flask import Blueprint, jsonify
+from flask_jwt_extended import jwt_required
+
+from access import current_user, visible_task_query
+from models import db, Task, TaskAssignment, User
+from validation import utcnow_naive
 
 task_stats_bp = Blueprint("task_stats_bp", __name__)
-
-
-def _user_task_query(user_id):
-    return Task.query.join(TaskList, Task.tasklist_id == TaskList.id).filter(TaskList.user_id == user_id)
 
 
 @task_stats_bp.route("/api/task-stats", methods=["GET"])
 @jwt_required()
 def get_task_stats():
-    user_id = int(get_jwt_identity())
-    now = datetime.now(timezone.utc)
-    base = _user_task_query(user_id)
+    """Counts for every top-level task visible in the user's workspace."""
+    user = current_user()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    now = utcnow_naive()
+    base = visible_task_query(user)
 
-    total     = base.count()
-    completed = base.filter(Task.status == "completed").count()
-    pending   = base.filter(Task.status == "pending").count()
-    in_prog   = base.filter(Task.status == "in-progress").count()
-    overdue   = base.filter(Task.due_date < now, Task.status != "completed").count()
-
-    overdue_rate = round(overdue / total * 100, 1) if total else 0.0
+    total = base.count()
+    counts = {status: base.filter(Task.status == status).count()
+              for status in ("todo", "in-progress", "pending", "completed")}
+    overdue = base.filter(Task.due_date < now, Task.status != "completed").count()
 
     return jsonify({
-        "completed":   completed,
-        "pending":     pending,
-        "inProgress":  in_prog,
+        "todo":        counts["todo"],
+        "inProgress":  counts["in-progress"],
+        "pending":     counts["pending"],      # shown as "In Review" on the board
+        "completed":   counts["completed"],
         "overdue":     overdue,
         "total":       total,
-        "overdueRate": overdue_rate,
+        "overdueRate": round(overdue / total * 100, 1) if total else 0.0,
     })
 
 
 @task_stats_bp.route("/api/upcoming-tasks", methods=["GET"])
 @jwt_required()
 def get_upcoming_tasks():
-    user_id = int(get_jwt_identity())
-    now = datetime.now(timezone.utc)
+    user = current_user()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    now = utcnow_naive()
 
-    upcoming_tasks = (
-        _user_task_query(user_id)
+    tasks = (
+        visible_task_query(user)
         .filter(Task.due_date >= now, Task.status != "completed")
         .order_by(Task.due_date.asc())
         .limit(5)
         .all()
     )
-
     return jsonify([{
-        "id":      task.id,
-        "title":   task.title,
-        "dueDate": task.due_date.strftime("%Y-%m-%d") if task.due_date else None,
-    } for task in upcoming_tasks])
+        "id":      t.id,
+        "title":   t.title,
+        "dueDate": t.due_date.strftime("%Y-%m-%d") if t.due_date else None,
+    } for t in tasks])
 
 
 @task_stats_bp.route("/api/task-stats/velocity", methods=["GET"])
 @jwt_required()
 def get_velocity():
-    """Completed task counts per week for the last 8 weeks."""
-    user_id = int(get_jwt_identity())
-    now = datetime.now(timezone.utc)
+    """Tasks completed per week for the last 8 weeks (by completion time)."""
+    user = current_user()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    now = utcnow_naive()
+    base = visible_task_query(user).filter(Task.status == "completed")
+
     weeks = []
     for i in range(7, -1, -1):
         week_start = now - timedelta(weeks=i + 1)
-        week_end   = now - timedelta(weeks=i)
-        count = (
-            _user_task_query(user_id)
-            .filter(
-                Task.status == "completed",
-                Task.updated_at >= week_start,
-                Task.updated_at < week_end,
-            )
-            .count()
-        )
+        week_end = now - timedelta(weeks=i)
+        count = base.filter(Task.completed_at >= week_start, Task.completed_at < week_end).count()
         weeks.append({"week": week_start.strftime("%b %d"), "completed": count})
     return jsonify(weeks)
 
@@ -82,31 +80,42 @@ def get_velocity():
 @task_stats_bp.route("/api/task-stats/workload", methods=["GET"])
 @jwt_required()
 def get_workload():
-    """Per-member task distribution across the workspace."""
-    user_id = int(get_jwt_identity())
-    me = db.session.get(User, user_id)
+    """Open work per person, by assignment (unassigned work is listed separately)."""
+    me = current_user()
     if not me or not me.workspace_id:
         return jsonify([])
 
-    now = datetime.now(timezone.utc)
-
-    # All users in the same workspace
-    members = User.query.filter_by(workspace_id=me.workspace_id).all()
-
+    now = utcnow_naive()
+    base = visible_task_query(me)
     result = []
-    for member in members:
-        base = _user_task_query(member.id)
-        total     = base.count()
-        completed = base.filter(Task.status == "completed").count()
-        in_prog   = base.filter(Task.status == "in-progress").count()
-        overdue   = base.filter(Task.due_date < now, Task.status != "completed").count()
+
+    for member in User.query.filter_by(workspace_id=me.workspace_id).order_by(User.id):
+        mine = base.join(TaskAssignment, TaskAssignment.task_id == Task.id).filter(
+            TaskAssignment.user_id == member.id
+        )
+        total = mine.count()
+        completed = mine.filter(Task.status == "completed").count()
         result.append({
-            "username":  member.username,
-            "total":     total,
-            "completed": completed,
-            "inProgress": in_prog,
-            "overdue":   overdue,
-            "open":      total - completed,
+            "username":   member.username,
+            "total":      total,
+            "completed":  completed,
+            "inProgress": mine.filter(Task.status == "in-progress").count(),
+            "overdue":    mine.filter(Task.due_date < now, Task.status != "completed").count(),
+            "open":       total - completed,
+        })
+
+    assigned_ids = db.session.query(TaskAssignment.task_id)
+    unassigned = base.filter(Task.id.notin_(assigned_ids))
+    total = unassigned.count()
+    if total:
+        completed = unassigned.filter(Task.status == "completed").count()
+        result.append({
+            "username":   "Unassigned",
+            "total":      total,
+            "completed":  completed,
+            "inProgress": unassigned.filter(Task.status == "in-progress").count(),
+            "overdue":    unassigned.filter(Task.due_date < now, Task.status != "completed").count(),
+            "open":       total - completed,
         })
 
     result.sort(key=lambda x: x["total"], reverse=True)

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   CheckSquare, Bell, BarChart2, Shield, Users, Rocket,
   ArrowRight, Calendar, Kanban, CheckCircle2, RefreshCw,
-  Timer, Server, Database, Lock, Package, Wrench, Headphones,
+  Timer, Server, Database, Lock, Package, Wrench,
   ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "../components/ui";
@@ -14,56 +14,56 @@ const FEATURES = [
   { Icon: CheckSquare, title: "Task Management",     desc: "Create, prioritize, and track every task with due dates, status labels, and subtasks — all in one place." },
   { Icon: Kanban,      title: "Kanban Boards",       desc: "Visualize your workflow with drag-and-drop columns. Move tasks from To-Do to Done with ease." },
   { Icon: Calendar,    title: "Calendar View",       desc: "See all deadlines in a monthly calendar. Plan ahead and never miss a due date again." },
-  { Icon: Timer,       title: "Time Tracking",       desc: "Track time spent on tasks with live timers, synced across your team in real time via Socket.IO." },
-  { Icon: Bell,        title: "Smart Notifications", desc: "Get real-time alerts when tasks are updated or deadlines are approaching." },
+  { Icon: Timer,       title: "Time Tracking",       desc: "Track time on tasks with live timers that stay in sync across your own devices, log past time, see weekly totals, and export to CSV." },
+  { Icon: Bell,        title: "Smart Notifications", desc: "Get instant alerts when you are assigned a task or someone comments, plus reminders 24 hours and 1 hour before a deadline and when it is overdue." },
   { Icon: BarChart2,   title: "Velocity Analytics",  desc: "Track your team's completion rate. Identify bottlenecks and improve delivery speed." },
   { Icon: Users,       title: "Team Collaboration",  desc: "Invite teammates, assign tasks, and work in shared workspaces with live real-time updates." },
-  { Icon: Shield,      title: "Secure by default",   desc: "bcrypt passwords, signed JWTs blocklisted on logout, SHA-256 reset tokens — security built in." },
+  { Icon: Shield,      title: "Secure by default",   desc: "Salted scrypt password hashes, signed tokens that are revoked on logout and password change, hashed single-use reset links, and workspace-level data isolation." },
 ];
 
 const WHY = [
-  { Icon: Database, title: "Your data, your server",    desc: "Teevexa Ordo runs entirely on your infrastructure. No data reaches our servers after purchase." },
-  { Icon: Lock,     title: "One fee. No subscriptions.", desc: "Pay once for the license. No monthly per-seat charges that grow as your team grows." },
-  { Icon: Server,   title: "Full control",              desc: "Host on AWS, Azure, GCP, on-premise, or air-gapped. You choose where and how it runs." },
+  { Icon: Database, title: "Runs on your own server",   desc: "Ordo is a standard Flask + React app with a PostgreSQL database. Deploy it anywhere you can run Python and Node — your data stays where you host it." },
+  { Icon: Lock,     title: "Security taken seriously",  desc: "Every request is scoped to your workspace, sessions are revocable, and real-time connections are authenticated. The API has a large automated test suite." },
+  { Icon: Server,   title: "Built end to end",          desc: "One person designed and built the whole stack: data model, API, WebSockets, background jobs, UI, tests and CI." },
 ];
 
 const HOW_IT_WORKS = [
-  { step: "01", title: "Try the demo — free",           desc: "Sign up right here and use the fully working product on our demo servers. No credit card, no time limit." },
-  { step: "02", title: "Purchase the license",          desc: "When you're ready, email us. You get the full source code and a one-time license to self-host." },
-  { step: "03", title: "Deploy on your infrastructure", desc: "We guide you through deployment or hand it to your dev team. Your instance, your data, your control." },
+  { step: "01", title: "Try the live demo",     desc: "Sign up in seconds — no credit card. Create lists, add tasks, invite a teammate and watch changes sync live." },
+  { step: "02", title: "Explore the features",  desc: "Kanban, calendar, recurring tasks, time tracking, notifications and analytics are all part of the demo." },
+  { step: "03", title: "Read the code",         desc: "The full source is on GitHub. Clone it and run it yourself with the setup steps in the README." },
 ];
 
 const INCLUDED = [
-  { Icon: Package,     title: "Full source code",      desc: "Complete React + Flask codebase. No black-box binaries — read it, modify it, make it yours." },
-  { Icon: RefreshCw,   title: "2 months free support",  desc: "Bug fixes and direct support for 60 days after purchase — covering deployment and initial stabilization. Paid maintenance and feature upgrades available after that." },
-  { Icon: Wrench,      title: "Deployment assistance",  desc: "We help you get it running on your server the first time, step by step." },
-  { Icon: Headphones,  title: "Optional maintenance plan", desc: "After the free support period, renew for continued updates, new features, and priority support on a paid basis." },
+  { Icon: Package,     title: "React 19 front end",      desc: "Vite, React Router, Tailwind CSS and Framer Motion, with optimistic updates and accessible dialogs." },
+  { Icon: Server,      title: "Flask API + Socket.IO",   desc: "Blueprints per feature, JWT auth with revocation, rate limiting, and authenticated WebSocket rooms." },
+  { Icon: Database,    title: "PostgreSQL + migrations", desc: "Alembic migrations, database constraints backing application rules, and safe background jobs." },
+  { Icon: Wrench,      title: "Tested and automated",    desc: "Backend and front-end test suites, plus GitHub Actions for lint, tests and deploys." },
 ];
 
 const FAQS = [
   {
-    question: "What does 'self-hosted' mean?",
-    answer: "Self-hosted means you run Teevexa Ordo on your own server or cloud account (AWS, Azure, GCP, your own VPS, etc.). We give you the source code; you deploy it where you like. Your data never touches our infrastructure after purchase.",
+    question: "Is this a commercial product?",
+    answer: "No. Ordo is a personal portfolio project by Benjamin Baya. It is not sold or supported as a commercial service.",
   },
   {
-    question: "Can I try it before buying?",
-    answer: "Yes — that's exactly what the demo is for. Sign up here and use the full product on our demo servers with your real team. When you're confident it's the right fit, contact us about purchasing the self-hosted license.",
+    question: "Can I try it?",
+    answer: "Yes — the live demo is open to anyone. It runs on free-tier hosting, so the first request after a quiet period can take up to a minute while the server wakes up.",
   },
   {
-    question: "What's included in the license?",
-    answer: "You get the complete source code (React frontend + Flask API), one year of bug fixes and feature updates, deployment assistance to get your instance running, and direct support access. After the first year you can renew the maintenance plan or keep using it as-is.",
+    question: "Will my demo data be kept?",
+    answer: "Not reliably. The demo database can be reset or removed at any time, so please don't store anything important there. Use fake data.",
   },
   {
-    question: "What do we need to host it?",
-    answer: "A Linux server or any cloud VM (1 vCPU, 1 GB RAM is enough for small teams), a PostgreSQL database, and a domain name. We provide a Docker setup and a step-by-step deployment guide.",
+    question: "Can I run it myself?",
+    answer: "Yes. The source is on GitHub under the MIT license. You need Python 3.12, Node 22 and a PostgreSQL database; the README walks through setup and deployment.",
   },
   {
-    question: "Is there a per-seat fee after purchase?",
-    answer: "No. The license is a one-time fee regardless of how many users you add. Invite your entire company — the price doesn't change.",
+    question: "What does it cost?",
+    answer: "Nothing. There are no plans, seats or fees.",
   },
   {
-    question: "How do we purchase the license?",
-    answer: "Email us at sales@teevexa.com and tell us about your team size and use case. We'll send you a quote and a license agreement. Payment is processed via invoice.",
+    question: "How do I get in touch?",
+    answer: "Email b3njaminbaya@gmail.com — feedback, bug reports and questions are welcome.",
   },
 ];
 
@@ -99,7 +99,7 @@ const LandingPage = () => {
         <div className="relative z-10 max-w-7xl mx-auto">
           <motion.div {...fadeUp(0)}>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-semibold mb-6">
-              <Server size={11} /> Self-hosted · One-time license
+              <Server size={11} /> Portfolio project · Open source
             </span>
           </motion.div>
 
@@ -107,16 +107,16 @@ const LandingPage = () => {
             className="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight tracking-tight"
             {...fadeUp(0.1)}
           >
-            Own your project<br />
-            <span className="text-primary">management software.</span>
+            Project management,<br />
+            <span className="text-primary">built end to end.</span>
           </motion.h1>
 
           <motion.p
             className="mt-6 text-lg sm:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed"
             {...fadeUp(0.2)}
           >
-            One-time license. Hosted on your server. No monthly per-seat fees.
-            Your data stays on your infrastructure — forever.
+            Ordo brings tasks, Kanban boards, a calendar, time tracking and real-time collaboration
+            together — a full-stack project by Benjamin Baya.
           </motion.p>
 
           <motion.div
@@ -124,15 +124,15 @@ const LandingPage = () => {
             {...fadeUp(0.3)}
           >
             <Button size="lg" onClick={() => navigate("/signup")}>
-              Try the demo — free <ArrowRight size={16} className="ml-1" />
+              Try the live demo <ArrowRight size={16} className="ml-1" />
             </Button>
-            <a href="mailto:sales@teevexa.com">
+            <a href="https://github.com/b3njaminbaya" target="_blank" rel="noopener noreferrer">
               <Button
                 size="lg"
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
               >
-                Contact for licensing
+                View the source
               </Button>
             </a>
           </motion.div>
@@ -141,7 +141,7 @@ const LandingPage = () => {
             className="mt-10 flex flex-wrap items-center justify-center gap-6 text-white/50 text-sm"
             {...fadeUp(0.4)}
           >
-            {["Try before you buy", "Self-hosted", "One-time fee", "Source code included"].map((t) => (
+            {["Free to try", "Open source (MIT)", "Self-hostable", "Demo may reset"].map((t) => (
               <span key={t} className="flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-success" /> {t}
               </span>
@@ -158,8 +158,8 @@ const LandingPage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Why self-hosted?</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">You pay once. You own it.</h2>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Why Ordo?</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Simple to run, careful under the hood.</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {WHY.map(({ Icon, title, desc }, i) => (
@@ -184,7 +184,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <span className="text-xs font-bold uppercase tracking-widest text-primary">How it works</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">From demo to deployed in three steps</h2>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">From demo to source in three steps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {HOW_IT_WORKS.map(({ step, title, desc }, i) => (
@@ -209,7 +209,7 @@ const LandingPage = () => {
             <span className="text-xs font-bold uppercase tracking-widest text-primary">Features</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Everything your team needs</h2>
             <p className="mt-4 text-text-muted max-w-xl mx-auto">
-              Tasks, Kanban, calendar, time tracking, analytics, and real-time collaboration — all included in the license.
+              Tasks, Kanban, calendar, time tracking, analytics, and real-time collaboration.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -238,21 +238,19 @@ const LandingPage = () => {
             <img src={TeamImage} alt="Team collaborating" className="w-full rounded-2xl shadow-card" />
           </motion.div>
           <div className="lg:w-1/2">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">Built for your company</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Built to be understood</span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text leading-tight">
-              Software you control.<br />Data you own.
+              Readable code.<br />Real features.
             </h2>
             <p className="mt-5 text-text-muted leading-relaxed">
-              Most project management tools are rented — you pay every month and your data lives on someone
-              else&apos;s servers. Teevexa Ordo flips that. You purchase the software once and run it on your
-              own infrastructure, on your terms.
-            </p>
+              Ordo is deliberately a complete, working application rather than a demo of one technique: multi-user workspaces, live updates, background jobs, file handling and a real security model.
+              </p>
             <ul className="mt-6 space-y-3">
               {[
-                "No per-seat fees that grow with your team",
-                "Your data never leaves your servers",
-                "Meets data-residency and compliance requirements",
-                "Extend or customise the source code as needed",
+                "Workspace-level access control on every endpoint",
+                "Real-time sync over authenticated WebSockets",
+                "Timezone-safe time tracking and reminders",
+                "MIT licensed — fork it and make it yours",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-text-muted">
                   <CheckCircle2 size={16} className="text-success mt-0.5 flex-shrink-0" />
@@ -262,10 +260,10 @@ const LandingPage = () => {
             </ul>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button onClick={() => navigate("/signup")}>
-                Try it free <ArrowRight size={15} className="ml-1" />
+                Try the demo <ArrowRight size={15} className="ml-1" />
               </Button>
-              <a href="mailto:sales@teevexa.com">
-                <Button variant="outline">Contact sales</Button>
+              <a href="mailto:b3njaminbaya@gmail.com">
+                <Button variant="outline">Get in touch</Button>
               </a>
             </div>
           </div>
@@ -276,10 +274,10 @@ const LandingPage = () => {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-surface border-t border-border">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">License</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">What&apos;s in the box</h2>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Under the hood</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">What it&apos;s made of</h2>
             <p className="mt-4 text-text-muted max-w-xl mx-auto">
-              Every Teevexa Ordo license includes everything you need to get up and running on your own server.
+              A quick tour of the stack.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -310,7 +308,7 @@ const LandingPage = () => {
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-text">Common questions</h2>
             <p className="mt-4 text-text-muted">
               Still have questions?{" "}
-              <a href="mailto:sales@teevexa.com" className="text-primary hover:underline">Email us.</a>
+              <a href="mailto:b3njaminbaya@gmail.com" className="text-primary hover:underline">Email us.</a>
             </p>
           </div>
           <div className="max-w-7xl mx-auto space-y-3">
@@ -344,23 +342,23 @@ const LandingPage = () => {
             <Rocket size={30} className="text-primary" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            Ready to own your software?
+            Ready to have a look?
           </h2>
           <p className="mt-4 text-white/60 text-lg max-w-xl mx-auto">
-            Try the demo today — free, no card, no time limit. When you&apos;re ready to purchase
-            the license and host it yourself, we&apos;re one email away.
+            Try the demo, or clone the repo and run it yourself. The demo runs on free hosting and its
+            data can be reset at any time, so please use fake data.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" onClick={() => navigate("/signup")}>
-              Try the demo free <ArrowRight size={16} className="ml-1" />
+              Try the live demo <ArrowRight size={16} className="ml-1" />
             </Button>
-            <a href="mailto:sales@teevexa.com">
+            <a href="mailto:b3njaminbaya@gmail.com">
               <Button
                 size="lg"
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 w-full sm:w-auto"
               >
-                Contact for licensing
+                View the source
               </Button>
             </a>
           </div>

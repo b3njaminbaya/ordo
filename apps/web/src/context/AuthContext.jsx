@@ -1,97 +1,135 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { errorMessage } from "../api/errors";
+import { Button, Spinner } from "../components/ui";
 
 const AuthContext = createContext(null);
+
+function storeTokens(data) {
+  if (data.access_token) localStorage.setItem("access_token", data.access_token);
+  if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
+}
+
+function clearTokens() {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreachable, setUnreachable] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-        if (!token) throw new Error("No token");
-
-        const response = await api.get("/session/");
-        setUser(response.data.user);
-      } catch {
-        localStorage.removeItem("access_token");
+  const checkSession = useCallback(async () => {
+    setUnreachable(false);
+    setLoading(true);
+    if (!localStorage.getItem("access_token")) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await api.get("/session");
+      setUser(response.data.user);
+    } catch (err) {
+      if (err.response) {
+        // The server answered and said we're not signed in.
+        clearTokens();
         setUser(null);
-      } finally {
-        setLoading(false);
+      } else {
+        // Server asleep / offline: keep the tokens and let the person retry.
+        setUnreachable(true);
       }
-    };
-    checkSession();
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const _acceptPendingInvite = async () => {
-    const token = sessionStorage.getItem("pendingInviteToken");
-    if (!token) return null;
-    sessionStorage.removeItem("pendingInviteToken");
-    try {
-      await api.post(`/invite/accept/${token}`);
-      // Return the refreshed user so navigation uses the correct workspace
-      const session = await api.get("/session/");
-      return session.data.user;
-    } catch {
-      // Non-fatal — user still lands in workspace
-      return null;
+  useEffect(() => { checkSession(); }, [checkSession]);
+
+  /** Re-read the signed-in user (after changing workspace, for example). */
+  const refreshUser = useCallback(async () => {
+    const response = await api.get("/session");
+    setUser(response.data.user);
+    return response.data.user;
+  }, []);
+
+  const completeSignIn = (data) => {
+    storeTokens(data);
+    setUser(data.user);
+    // An invite link opened before signing in is confirmed on its own page — we never
+    // move someone into another workspace without asking.
+    const pending = sessionStorage.getItem("pendingInviteToken");
+    if (pending) {
+      sessionStorage.removeItem("pendingInviteToken");
+      navigate(`/invite/${pending}`);
+    } else {
+      navigate("/workspace/dashboard");
     }
   };
 
   const register = async (userData) => {
     try {
-      const response = await api.post("/register/", userData);
-      localStorage.setItem("access_token", response.data.access_token);
-      if (response.data.refresh_token) {
-        localStorage.setItem("refresh_token", response.data.refresh_token);
-      }
-      const updatedUser = await _acceptPendingInvite();
-      const activeUser = updatedUser || response.data.user;
-      setUser(activeUser);
-      navigate(`/workspace/${activeUser.workspace_id}`);
+      const response = await api.post("/register", userData);
+      completeSignIn(response.data);
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.error || "Registration failed" };
+      return { success: false, message: errorMessage(error, "Registration failed") };
     }
   };
 
   const login = async (credentials) => {
     try {
-      const response = await api.post("/login/", credentials);
-      localStorage.setItem("access_token", response.data.access_token);
-      if (response.data.refresh_token) {
-        localStorage.setItem("refresh_token", response.data.refresh_token);
-      }
-      const updatedUser = await _acceptPendingInvite();
-      const activeUser = updatedUser || response.data.user;
-      setUser(activeUser);
-      navigate(`/workspace/${activeUser.workspace_id}`);
+      const response = await api.post("/login", credentials);
+      completeSignIn(response.data);
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.error || "Login failed" };
+      return { success: false, message: errorMessage(error, "Login failed") };
     }
   };
 
   const logout = async () => {
     try {
-      await api.delete("/logout/");
+      await api.delete("/logout", { data: { refresh_token: localStorage.getItem("refresh_token") } });
     } catch {
       // Token may already be expired — still clear local state
     } finally {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      clearTokens();
       setUser(null);
       navigate("/");
     }
   };
 
+  /** Called after a password change, which signs out every other session. */
+  const replaceTokens = (data) => storeTokens(data);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-page text-primary" aria-busy="true">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (unreachable) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-page px-4">
+        <div className="max-w-sm text-center space-y-4">
+          <h1 className="text-lg font-semibold text-text">Can&apos;t reach the server</h1>
+          <p className="text-sm text-text-muted">
+            It may be starting up or your connection dropped. You&apos;re still signed in — try again in a moment.
+          </p>
+          <Button onClick={checkSession}>Try again</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ user, setUser, register, login, logout, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, setUser, refreshUser, register, login, logout, replaceTokens, loading }}>
+      {children}
     </AuthContext.Provider>
   );
 }

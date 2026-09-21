@@ -19,7 +19,7 @@ const NotFound = () => (
         <ArrowLeft size={15} /> Back to Home
       </Link>
       <a
-        href="mailto:support@teevexa.com"
+        href="mailto:b3njaminbaya@gmail.com"
         className="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-primary text-primary text-sm font-medium rounded transition-colors hover:bg-primary/5"
       >
         Email Support

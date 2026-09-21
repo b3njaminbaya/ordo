@@ -1,25 +1,42 @@
-# Teevexa Ordo
+# Ordo
 
-Self-hosted project management software. Buy once, deploy on your own server, own your data forever — no monthly per-seat fees.
+A full-stack project management app — tasks, Kanban, calendar, time tracking and real-time team collaboration — designed and built by **Benjamin Baya**.
+
+This is a personal portfolio project. It shows how I design, build, secure and test a multi-user web application end to end: a React front end, a Flask API with WebSockets, a PostgreSQL schema with migrations, and CI.
+
+**Author:** Benjamin Baya · [b3njaminbaya@gmail.com](mailto:b3njaminbaya@gmail.com) · [GitHub @b3njaminbaya](https://github.com/b3njaminbaya)
+
+---
+
+## Live demo
+
+The demo runs on free-tier hosting, so please keep these in mind:
+
+- **The first request can take up to a minute** while the server wakes up after a quiet period.
+- **Data can be reset or deleted at any time**, and the demo may occasionally be offline. It is not a service — use fake data and don't store anything you care about.
+- There are no plans, limits or fees.
+
+Prefer to run it yourself? See [Development setup](#development-setup).
 
 ---
 
-## What it is
+## What it demonstrates
 
-Teevexa Ordo is a full-featured project management tool sold as a one-time source-code license. Companies try the hosted demo, purchase the license, and run it entirely on their own infrastructure. Their data never touches our servers after deployment.
-
----
+- **Multi-tenant access control** — every endpoint is scoped to the caller's workspace; cross-workspace access is covered by tests.
+- **Authentication done carefully** — hashed passwords, signed tokens revoked on logout and password change, hashed single-use reset links, rate limiting, authenticated WebSockets.
+- **Real-time collaboration** — Socket.IO rooms chosen by the server from the caller's identity, with optimistic UI and rollback on the client.
+- **Correctness details** — timezone-safe time tracking, concurrency-safe background jobs, database constraints backing application rules, safe file handling.
+- **Testing** — a 150+ test API suite and a component/regression suite for the web app.
 
 ## Features
 
-- **Task management** — task lists, subtasks, priorities, due dates, status labels
+- **Task management** — task lists, subtasks, priorities, due dates, assignees, comments, file attachments, recurring tasks
 - **Kanban boards** — drag-and-drop columns with live updates
 - **Calendar view** — monthly overview of all deadlines
-- **Time tracking** — live timers per task, synced across the team via Socket.IO
-- **Velocity analytics** — completion rate charts, week-over-week trends
-- **Team collaboration** — workspaces, member invites, real-time Socket.IO sync
-- **Smart notifications** — deadline reminders and task-update alerts
-- **Secure by default** — bcrypt passwords, signed JWTs blocklisted on logout, SHA-256 reset tokens
+- **Time tracking** — live timers per task (kept in sync across your own devices), manual entries, weekly totals, CSV export
+- **Analytics** — status breakdown, weekly velocity, workload per person
+- **Team collaboration** — workspaces with an owner, email/link invites (expiring and revocable), member removal, real-time sync between teammates
+- **Notifications** — assignment and comment alerts, plus deadline reminders (24 h, 1 h, overdue)
 
 ---
 
@@ -38,16 +55,16 @@ Teevexa Ordo is a full-featured project management tool sold as a one-time sourc
 ## Project structure
 
 ```
-teevexa-ordo/
+ordo/
 ├── apps/
-│   ├── web/          # React + Vite frontend (@teevexa-ordo/web)
+│   ├── web/          # React + Vite frontend (@ordo/web)
 │   └── api/          # Flask API
 │       ├── views/    # Route blueprints (auth, user, tasks, time_entries, …)
 │       ├── models.py # SQLAlchemy models
-│       └── app.py    # App factory + SocketIO init
+│       └── app.py    # App setup + SocketIO init
 ├── packages/
-│   ├── ui/           # Shared Tailwind preset + design tokens (@teevexa-ordo/ui)
-│   ├── types/        # Shared TypeScript types (@teevexa-ordo/types)
+│   ├── ui/           # Shared Tailwind preset + design tokens (@ordo/ui)
+│   ├── types/        # Shared TypeScript types (@ordo/types)
 │   └── config/       # Shared ESLint + tsconfig presets
 └── package.json      # pnpm workspace root
 ```
@@ -77,10 +94,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create `apps/api/.env`:
+Create `apps/api/.env` (see `.env.example`):
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/teevexa_ordo
+DATABASE_URL=postgresql://user:password@localhost:5432/ordo
 JWT_SECRET_KEY=your-secret-key
 SECRET_KEY=your-flask-secret
 FRONTEND_URL=http://localhost:5173
@@ -103,6 +120,19 @@ python app.py
 
 API runs at `http://localhost:5000`.
 
+Run the API tests (they use an in-memory SQLite database and never touch `DATABASE_URL`):
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/
+```
+
+Optional dev data (drops all tables — refuses to run when `FLASK_ENV=production`):
+
+```bash
+python seed.py --yes     # demo users john_doe / jane_smith, password: password123
+```
+
 ### 3. Start the frontend
 
 ```bash
@@ -112,38 +142,36 @@ cd apps/web
 pnpm dev
 ```
 
-Frontend runs at `http://localhost:5173`.
+Frontend runs at `http://localhost:5173`. Run its tests with `pnpm test`.
 
 ---
 
 ## Deployment
 
-The demo instance auto-deploys via GitHub Actions on push to `main`:
+GitHub Actions can deploy on push to `main`:
 
 - **Frontend** → Vercel (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` secrets)
 - **API** → Render (`render.yaml` drives the service; `RENDER_DEPLOY_HOOK_URL` secret triggers a manual redeploy)
 
-Required Render environment variables: `DATABASE_URL`, `JWT_SECRET_KEY`, `SECRET_KEY`, `FRONTEND_URL`, and optional `MAIL_*` and `SENTRY_DSN`.
+Required environment variables: `DATABASE_URL`, `JWT_SECRET_KEY`, `FRONTEND_URL`, and optional `MAIL_*`, `SENTRY_DSN`, `REDIS_URL`.
 
-For client self-hosted deployments, a Docker setup and step-by-step deployment guide are provided separately with the license.
+Things to know before deploying:
 
----
-
-## Licensing
-
-Teevexa Ordo is sold as a **one-time source-code license**. The hosted version at this repository is a public demo — companies can sign up and evaluate all features before purchasing.
-
-Upon purchase you receive:
-- Full source code
-- 60 days of bug-fix support and deployment assistance
-- Optional paid maintenance plan for continued updates after that
-
-To enquire about licensing: **sales@teevexa.com**
+- **`JWT_SECRET_KEY` is mandatory in production.** With `FLASK_ENV=production` the API refuses to start without it.
+- **Set `VITE_API_BASE_URL` when building the frontend** (or serve the API from the same origin). The app does not fall back to any hosted demo API on other domains.
+- **Uploads live on local disk** (`apps/api/uploads/`). Mount a persistent volume there, or files are lost when the container is replaced. Back it up with the database.
+- **Behind a reverse proxy**, set `TRUSTED_PROXY_COUNT` (defaults to `1` in production) so rate limits apply per client rather than per proxy.
+- **Several API instances:** set `REDIS_URL` (rate limits + Socket.IO fan-out) and `RUN_SCHEDULER=0` on all but one instance. The reminder and recurring-task jobs are safe if two run at once, but that wastes work.
+- **PostgreSQL is required for anything real.** SQLite is for local development and tests only; it does not enforce the status/priority enums.
 
 ---
 
-## Support
+## License
 
-- General / technical: support@teevexa.com
-- Licensing / sales: sales@teevexa.com
-- Follow us: [LinkedIn](https://linkedin.com/company/teevexa) · [X](https://x.com/teevexa_) · [Instagram](https://instagram.com/teevexa)
+[MIT](LICENSE) © 2026 Benjamin Baya. You're welcome to read, run, fork and learn from this code.
+
+---
+
+## Contact
+
+Feedback, bug reports and questions are welcome: [b3njaminbaya@gmail.com](mailto:b3njaminbaya@gmail.com)

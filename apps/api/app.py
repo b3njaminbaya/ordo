@@ -37,20 +37,32 @@ logger = structlog.get_logger()
 
 # ── Flask ─────────────────────────────────────────────────────────────────────
 from flask import Flask, jsonify
+from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager
-from datetime import timedelta
-from models import db, TokenBlocklist
+from datetime import timedelta, timezone
+from models import db, TokenBlocklist, User
 from flask_cors import CORS
 from flask_mail import Mail
 from extensions import limiter
 
+_IS_TESTING = os.getenv("FLASK_ENV") == "testing"
+_DEV_SECRET = "dev-secret-change-me"
+
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # largest attachment is 10 MB + form overhead
 
-_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-ALLOWED_ORIGINS = list({_frontend_url, "http://localhost:5173"})
+# Behind a reverse proxy (Render, nginx, …) the real client IP is in X-Forwarded-For.
+# Without this every visitor shares the proxy's IP and therefore one rate-limit bucket.
+_proxies = int(os.getenv("TRUSTED_PROXY_COUNT", "1" if _IS_PROD else "0") or 0)
+if _proxies:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_proxies, x_proto=_proxies, x_host=_proxies)
+
+_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+ALLOWED_ORIGINS = [_frontend_url] if _IS_PROD else list({_frontend_url, "http://localhost:5173"})
 
 CORS(
     app,
@@ -66,27 +78,35 @@ app.config["MAIL_USE_TLS"]        = os.getenv("MAIL_USE_TLS", "true").lower() !=
 app.config["MAIL_USERNAME"]       = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"]       = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
-app.config["MAIL_SUPPRESS_SEND"]  = os.getenv("FLASK_ENV") == "testing"
+app.config["MAIL_SUPPRESS_SEND"]  = _IS_TESTING
 
 mail = Mail(app)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///teevexa-ordo.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ordo.db")
 app.config["SQLALCHEMY_DATABASE_URI"]        = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-app.config["JWT_SECRET_KEY"]          = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
-app.config["SECRET_KEY"]              = os.getenv("SECRET_KEY", "dev-secret-change-me")
+_jwt_secret = os.getenv("JWT_SECRET_KEY") or _DEV_SECRET
+if _jwt_secret == _DEV_SECRET:
+    if _IS_PROD:
+        # Anyone could mint valid tokens with the published default. Refuse to boot.
+        raise RuntimeError("JWT_SECRET_KEY must be set to a strong random value in production")
+    logger.warning("insecure_default_jwt_secret", hint="set JWT_SECRET_KEY before deploying")
+app.config["JWT_SECRET_KEY"]          = _jwt_secret
+app.config["SECRET_KEY"]              = os.getenv("SECRET_KEY") or _jwt_secret
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
-app.config["FRONTEND_URL"]            = os.getenv("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
+# Same default as the CORS origin so emailed links always match where the app is served.
+app.config["FRONTEND_URL"]            = _frontend_url
 
 db.init_app(app)
 migrate = Migrate(app, db)
 
 # ── Rate limiter ──────────────────────────────────────────────────────────────
 REDIS_URL = os.getenv("REDIS_URL")
-limiter.init_app(app)
+# Flask-Limiter reads its config inside init_app, so these must be set first.
 app.config["RATELIMIT_STORAGE_URI"] = REDIS_URL or "memory://"
-app.config["RATELIMIT_ENABLED"] = not app.config.get("TESTING", False)
+app.config["RATELIMIT_ENABLED"] = not _IS_TESTING
+limiter.init_app(app)
 
 # ── Socket.IO (Redis message queue when REDIS_URL is set) ────────────────────
 socketio = SocketIO(
@@ -105,7 +125,7 @@ from views import (
     task_assignment_bp, comments_bp, notifications_bp, task_stats_bp,
     subtasks_bp, attachments_bp, recurring_bp, time_entries_bp,
 )
-import views.realtime  # registers Socket.IO event handlers
+import views.realtime  # noqa: F401  (registers Socket.IO event handlers)
 
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
@@ -123,13 +143,45 @@ app.register_blueprint(time_entries_bp)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
-    jti = jwt_payload["jti"]
-    return db.session.query(TokenBlocklist.id).filter_by(jti=jti).scalar() is not None
+    """A token is dead if it was logged out, its user is gone, or the user's
+    password changed after it was issued."""
+    if db.session.query(TokenBlocklist.id).filter_by(jti=jwt_payload["jti"]).first() is not None:
+        return True
+    try:
+        user = db.session.get(User, int(jwt_payload["sub"]))
+    except (TypeError, ValueError):
+        return True
+    if user is None:
+        return True
+    if user.password_changed_at is not None:
+        changed = int(user.password_changed_at.replace(tzinfo=timezone.utc).timestamp())
+        if int(jwt_payload.get("iat", 0)) < changed:
+            return True
+    return False
+
+
+# ── JSON error responses (the API never returns HTML) ────────────────────────
+@app.errorhandler(HTTPException)
+def handle_http_error(err):
+    if err.code == 429:
+        message = "Too many requests. Please wait a moment and try again."
+    elif err.code == 413:
+        message = "The uploaded file is too large."
+    else:
+        message = err.description or err.name
+    return jsonify({"error": message}), err.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(err):
+    db.session.rollback()
+    logger.exception("unhandled_exception", error=str(err))
+    return jsonify({"error": "Something went wrong on our side. Please try again."}), 500
 
 
 @app.route("/")
 def index():
-    return jsonify({"message": "Welcome to Teevexa Ordo API"})
+    return jsonify({"message": "Welcome to Ordo API"})
 
 
 # ── APScheduler: deadline notifications ──────────────────────────────────────
@@ -168,9 +220,11 @@ def _start_scheduler():
     return scheduler
 
 
-# Start the scheduler once at import time.
-# Guard against the Werkzeug reloader forking a second process in debug mode.
-if not os.environ.get("WERKZEUG_RUN_MAIN"):
+# Start the scheduler at import time, except under tests or when disabled
+# (set RUN_SCHEDULER=0 on all but one instance when running several).
+# Both jobs are safe to run concurrently: reminders are claimed through a unique
+# row and recurring tasks through a compare-and-set on next_run_at.
+if not _IS_TESTING and os.getenv("RUN_SCHEDULER", "1") != "0" and not os.environ.get("WERKZEUG_RUN_MAIN"):
     _start_scheduler()
 
 
@@ -180,6 +234,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=port,
-        debug=not _IS_PROD,
+        debug=os.getenv("FLASK_DEBUG") == "1" and not _IS_PROD,
         use_reloader=False,
     )

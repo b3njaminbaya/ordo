@@ -88,8 +88,9 @@ class TestLogout:
 
 class TestForgotPassword:
     def test_unknown_email(self, client):
+        # Same answer as for a known address, so the endpoint can't be used to find accounts.
         res = client.post("/forgot-password", json={"email": "no@one.com"})
-        assert res.status_code == 404
+        assert res.status_code == 200
 
     def test_known_email_returns_200(self, client):
         register(client)

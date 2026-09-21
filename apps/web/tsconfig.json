@@ -1,9 +1,9 @@
 {
-  "extends": "@teevexa-ordo/config-tsconfig/react",
+  "extends": "@ordo/config-tsconfig/react",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@teevexa-ordo/types": ["../../packages/types/src/index.ts"]
+      "@ordo/types": ["../../packages/types/src/index.ts"]
     }
   },
   "include": ["src", "../../packages/types/src"],

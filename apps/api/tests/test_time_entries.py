@@ -70,7 +70,7 @@ class TestStartTimer:
         bob = auth_headers(client, username="bob", email="bob@t.com")
         tl_id = _make_list(client, bob, name="Bob's list")
         res = _start(client, alice, tl_id)
-        assert res.status_code == 403
+        assert res.status_code == 404
 
 
 # ── Stop timer ────────────────────────────────────────────────────────────────

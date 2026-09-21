@@ -1,5 +1,5 @@
 {
-  "name": "@teevexa-ordo/ui",
+  "name": "@ordo/ui",
   "version": "0.0.0",
   "private": true,
   "main": "./src/index.js",

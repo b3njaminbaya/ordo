@@ -1,111 +1,52 @@
-### Taskly Backend
- **Overview**
-Taskly is a task management system designed to help users efficiently organize and track their tasks. This backend, built with Flask, handles user management, task assignments, comments, notifications, and real-time updates
+# Ordo — API
 
-**By Benjamin Baya, Rome Ojuro , Larry Mecha and Nadifo Ismail**
+The Flask backend for [Ordo](../../README.md), by Benjamin Baya. It provides authentication, workspaces and invites, tasks and lists, comments, attachments, notifications, recurring tasks, time tracking, analytics, and real-time updates over Socket.IO.
 
-## Resources
-- Deployed Backend: [https://taskly-app-9u0e.onrender.com]
-- Deployed Frontend: [https://taskly-app-iota.vercel.app]
-- Slides link: [https://docs.google.com/presentation/d/1xOcORaEO7jcECurvcL3LSUZDYCb-8kgVMYuOM4AK4WY/edit?usp=sharing]
-- Frontend link:[https://github.com/benjaminmweribaya/taskly-app-front-end/tree/main]
+## Stack
 
-## Technologies Used
-- **Backend:** Flask, Flask-JWT-Extended, Flask-SQLAlchemy  
-- **Database:** PostgreSQL  
-- **Real-Time Communication:** WebSocket (Flask-SocketIO)  
-- **Authentication:** JWT (JSON Web Token)  
-- **Deployment:** Render  
-- **Others:** SQLAlchemy Serializer, Gunicorn  
+Python 3.12 · Flask · Flask-SQLAlchemy · Flask-Migrate (Alembic) · Flask-SocketIO (gevent) · Flask-JWT-Extended · Flask-Limiter · Flask-Mail · APScheduler · PostgreSQL
 
-## Project Structure
-        ├── app.py
-        ├── instance
-        │   └── taskly.db
-        ├── LICENSE.md
-        ├── migrations
-        │   ├── alembic.ini
-        │   ├── env.py
-        │   ├── README
-        │   └── script.py.mako
-        ├── models.py
-        ├── Pipfile
-        ├── Pipfile.lock
-        ├── __pycache__
-        │   ├── app.cpython-312.pyc
-        │   └── models.cpython-312.pyc
-        ├── README.md
-        ├── requirements.txt
-        ├── seed.py
-        ├── task
-        │   ├── bin
-        │   ├── include
-        │   ├── lib
-        │   ├── lib64 -> lib
-        │   ├── pipenv-proper-names.txt
-        │   ├── pyvenv.cfg
-        │   └── src
-        └── views
-            ├── auth.py
-            ├── comments.py
-            ├── __init__.py
-            ├── notifications.py
-            ├── taskassignment.py
-            ├── tasklist.py
-            ├── task.py
-            └── user.py
-## Prerequisites
-Before running this project, ensure you have:  
-- Python 3.8 + installed  
-- PostgreSQL database set up  
-- Virtual environment (`venv`) installed  
+## Layout
 
-## Installation
- **1. Clone the repository**
-- git clone <repository-url>
-- cd taskly-backend
+```
+app.py                    App setup, CORS, JWT, limiter, error handlers, scheduler
+models.py                 SQLAlchemy models
+access.py                 Workspace (tenant) access helpers used by every view
+validation.py             Input validation helpers
+serializers.py            JSON shapes shared by REST and Socket.IO
+workspace_service.py      Leaving / removing members without losing team data
+notifications_service.py  Sending notifications and the deadline job
+files.py                  Upload helpers (image sniffing, safe deletion)
+views/                    One blueprint per feature
+migrations/               Alembic migrations
+tests/                    pytest suite (in-memory SQLite)
+```
 
-**2. Create and activate a vitual environment**
-- python -m venv venv
-- source venv/bin/activate  # On Windows use: venv\Scripts\activate
+## Run it
 
+```bash
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # then edit
+flask db upgrade
+python app.py               # http://localhost:5000
+```
 
-**3. Install the dependencies**
-- pip install -r requirements.txt
+## Test it
 
-**4. Set up environment variables**
-- Create a .env file and configure database settings:
-    DATABASE_URL=postgresql://username:password@localhost:5432/taskly_db
-    SECRET_KEY=your_secret_key
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/
+```
 
-**5.Run the migrations**
-- flask db upgrade
+The tests force an in-memory SQLite database, so they never touch the database in your `.env`.
 
-**6. Start the server**
-**In Development :**
-- flask run --debug
+## Notes
 
-**In Production :**
-- gunicorn -k gevent -w 1 app:app
+- Set `JWT_SECRET_KEY` in production; the app refuses to start without it when `FLASK_ENV=production`.
+- Uploads are stored on local disk in `uploads/` — mount a persistent volume in production.
+- See the [root README](../../README.md) for deployment notes and environment variables.
 
-## Features
-- **User Authentication:** Register, login, JWT authentication  
-- **Role-Based Access Control (RBAC):** Admin and user roles  
-- **Task Management:** Create, update, assign, and delete tasks  
-- **Comments:** Add and manage comments on tasks  
-- **Notifications:** Receive real-time task updates via WebSocket  
-- **Task Prioritization:** Set priorities like low, medium, high, and urgent  
-- **Task Status Updates:** Track progress with statuses like pending, in-progress, completed, and todo  
-- **Real-Time Updates:** WebSocket (Flask-SocketIO) for instant task changes and notifications  
+## Author
 
-## Usage Guide
-- Admins can manage users, assign tasks, and oversee task progress.
-- Users can create and manage their own tasks, comment on tasks, and receive notifications.
-
-## Known Issues
-None reported. Feel free to open an issue if you encounter any problems.
-
-## License
-LIcenced under the [https://github.com/benjaminmweribaya/taskly-app-back-end/blob/main/LICENSE.md]
-
-Copyright (c) 2025 Benjamin Baya, Rome Ojuro , Larry Mecha and Nadifo Ismail
+Benjamin Baya — [b3njaminbaya@gmail.com](mailto:b3njaminbaya@gmail.com)

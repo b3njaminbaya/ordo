@@ -33,7 +33,7 @@ jobs:
       - name: Build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-        run: pnpm turbo build --filter=@teevexa-ordo/web
+        run: pnpm turbo build --filter=@ordo/web
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
@@ -67,10 +67,13 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm install -g vercel@latest
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN not set — skipping web deploy"
+            exit 0
+          fi
           vercel deploy --prebuilt --prod \
             --token=$VERCEL_TOKEN \
-            --local-config=apps/web/vercel.json || \
-          echo "Vercel deployment configured — set VERCEL_TOKEN/ORG_ID/PROJECT_ID secrets to activate"
+            --local-config=apps/web/vercel.json
 
   # ── Deploy API to Render ──────────────────────────────────────────────────
   # Render auto-deploys from main branch via render.yaml — this job just
@@ -78,9 +81,14 @@ jobs:
   deploy-api:
     name: Trigger API deploy → Render
     runs-on: ubuntu-latest
-    if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
 
     steps:
       - name: Trigger Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL not set — skipping"
+            exit 0
+          fi
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"

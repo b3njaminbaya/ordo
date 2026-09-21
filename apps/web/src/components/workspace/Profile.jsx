@@ -5,8 +5,8 @@ import Cropper from "react-easy-crop";
 import { Settings, LogOut, Camera, X, ZoomIn, ZoomOut, Check, Mail, Building2, User as UserIcon, Shield } from "lucide-react";
 import { Button, Alert } from "../ui";
 import api from "../../api/axios";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://teevexa-ordo-api.onrender.com";
+import { errorMessage } from "../../api/errors";
+import { assetUrl } from "../../config";
 
 async function getCroppedBlob(imageSrc, croppedAreaPixels) {
   const image = await new Promise((resolve, reject) => {
@@ -47,12 +47,13 @@ const CropModal = ({ src, onConfirm, onCancel, uploading }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Crop your photo"
+      onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>
       <div className="bg-surface rounded-2xl border border-border w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 className="text-sm font-semibold text-text">Crop your photo</h2>
-          <button onClick={onCancel} className="text-text-muted hover:text-text transition-colors">
+          <button onClick={onCancel} className="text-text-muted hover:text-text transition-colors" aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -77,6 +78,7 @@ const CropModal = ({ src, onConfirm, onCancel, uploading }) => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
+              aria-label="Zoom out"
               className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
             >
               <ZoomOut size={16} />
@@ -93,6 +95,7 @@ const CropModal = ({ src, onConfirm, onCancel, uploading }) => {
             />
             <button
               onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
+              aria-label="Zoom in"
               className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-muted transition-colors"
             >
               <ZoomIn size={16} />
@@ -130,9 +133,7 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  const avatarUrl = user?.profile_picture
-    ? `${API_BASE}${user.profile_picture}`
-    : null;
+  const avatarUrl = assetUrl(user?.profile_picture);
 
   const initials = user?.username
     ? user.username.slice(0, 2).toUpperCase()
@@ -170,7 +171,7 @@ const Profile = () => {
       setShowCrop(false);
       setImageSrc(null);
     } catch (err) {
-      setUploadError(err.response?.data?.error || "Upload failed. Please try again.");
+      setUploadError(errorMessage(err, "Upload failed. Please try again."));
       setShowCrop(false);
     } finally {
       setUploading(false);
@@ -202,7 +203,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
                 aria-label="Change profile picture"
               >
                 <Camera size={22} className="text-white" />
@@ -222,7 +223,7 @@ const Profile = () => {
               <p className="text-sm text-text-muted mt-1 break-all">{user?.email}</p>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-primary/10 text-primary mt-3">
                 <Shield size={11} />
-                {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Member"}
+                {user?.workspace?.is_owner ? "Workspace owner" : "Member"}
               </span>
               <div className="flex flex-wrap gap-3 mt-5 justify-center sm:justify-start">
                 <Button size="sm" onClick={() => navigate("/workspace/settings")}
@@ -247,7 +248,7 @@ const Profile = () => {
           <div className="border-t border-border grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
             {[
               { Icon: Mail,      label: "Email",     value: user?.email || "—" },
-              { Icon: Building2, label: "Workspace", value: user?.workspace?.name || `${user?.username}'s Workspace` },
+              { Icon: Building2, label: "Workspace", value: user?.workspace?.name || "—" },
               { Icon: UserIcon,  label: "Username",  value: `@${user?.username || "—"}` },
             ].map(({ Icon, label, value }) => (
               <div key={label} className="flex items-start gap-4 px-6 py-5">

@@ -14,9 +14,11 @@ const Signup = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const validationSchema = Yup.object({
-    username: Yup.string().min(3, "At least 3 characters").required("Username is required"),
-    email: Yup.string().email("Invalid email format").required("Email is required"),
-    password: Yup.string().min(6, "At least 6 characters").required("Password is required"),
+    username: Yup.string()
+      .matches(/^[A-Za-z0-9_.-]{3,50}$/, "3–50 characters: letters, numbers, dot, dash or underscore")
+      .required("Username is required"),
+    email: Yup.string().trim().email("Invalid email format").required("Email is required"),
+    password: Yup.string().min(8, "At least 8 characters").required("Password is required"),
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password"), null], "Passwords do not match")
       .required("Please confirm your password"),
@@ -27,8 +29,8 @@ const Signup = () => {
 
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     const result = await register({
-      username: values.username,
-      email: values.email,
+      username: values.username.trim(),
+      email: values.email.trim(),
       password: values.password,
     });
     if (!result.success) {
@@ -48,7 +50,7 @@ const Signup = () => {
         {/* Logo */}
         <div className="flex items-center gap-2.5 relative z-10">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg shadow">T</div>
-          <span className="text-white font-bold text-xl tracking-tight">Teevexa Ordo</span>
+          <span className="text-white font-bold text-xl tracking-tight">Ordo</span>
         </div>
 
         {/* Tagline */}
@@ -58,14 +60,14 @@ const Signup = () => {
             <span className="text-primary">finally organized.</span>
           </h2>
           <p className="mt-4 text-white/60 text-sm leading-relaxed">
-            Join teams already using Teevexa Ordo to ship faster, stay aligned, and stress less.
+            Try Ordo, a portfolio project by Benjamin Baya. The demo may be reset at any time, so use fake data.
           </p>
           <ul className="mt-6 space-y-3">
             {[
               "Kanban boards with real-time drag & drop",
               "Smart deadline notifications",
               "Velocity analytics for your whole team",
-              "Free forever — no credit card needed",
+              "Free to try — open source (MIT)",
             ].map((item) => (
               <li key={item} className="flex items-center gap-2.5 text-sm text-white/70">
                 <span className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -77,7 +79,7 @@ const Signup = () => {
           </ul>
         </div>
 
-        <p className="text-xs text-white/30 relative z-10">&copy; {new Date().getFullYear()} Teevexa Ordo</p>
+        <p className="text-xs text-white/30 relative z-10">&copy; {new Date().getFullYear()} Ordo by Benjamin Baya</p>
       </div>
 
       {/* Right form panel */}
@@ -147,7 +149,7 @@ const Signup = () => {
                       id="signup-password"
                       type={showPassword ? "text" : "password"}
                       name="password"
-                      placeholder="Min. 6 characters"
+                      placeholder="Min. 8 characters"
                       autoComplete="new-password"
                       className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-text bg-page placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
                     />

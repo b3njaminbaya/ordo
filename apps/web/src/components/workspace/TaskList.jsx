@@ -1,206 +1,283 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Trash2, Plus, Check, X } from "lucide-react";
+import api from "../../api/axios";
+import { errorMessage } from "../../api/errors";
+import { useAuth } from "../../context/AuthContext";
+import { socket } from "../../socket";
+import { Alert, Button, Modal, Spinner, useToast } from "../ui";
 import TaskBoard from "./TaskBoard";
 import TaskForm from "./TaskForm";
-import { Trash2, Plus } from "lucide-react";
-import api from "../../api/axios";
-import { Button, Modal } from "../ui";
 
 const TaskList = () => {
-  const [taskLists, setTaskLists] = useState({});
-  const [openTaskForm, setOpenTaskForm] = useState(null);
+  const { user } = useAuth();
+  const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [openTaskId] = useState(() => Number(searchParams.get("task")) || null);
+
+  const [lists, setLists] = useState([]);          // [{id, name, user_id, owner_name, tasks}]
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [addingToList, setAddingToList] = useState(null);
   const [editingListId, setEditingListId] = useState(null);
-  const [newListTitle, setNewListTitle] = useState("");
+  const [editingName, setEditingName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [savingList, setSavingList] = useState(false);
 
-  useEffect(() => {
-    fetchTaskLists();
-  }, []);
-
-  const fetchTaskLists = async () => {
+  const fetchLists = useCallback(async () => {
     try {
       const res = await api.get("/tasklists/");
-      const mapped = res.data.reduce((acc, tl) => {
-        acc[tl.id] = { name: tl.name, tasks: tl.tasks || [] };
-        return acc;
-      }, {});
-      setTaskLists(mapped);
-    } catch {
-      // non-fatal
+      setLists(Array.isArray(res.data) ? res.data : []);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err, "Failed to load your lists."));
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const addTaskList = async () => {
-    const name = `New List ${Date.now()}`;
+  useEffect(() => { fetchLists(); }, [fetchLists]);
+
+  useEffect(() => {
+    if (openTaskId && !loading) setSearchParams({}, { replace: true });
+  }, [openTaskId, loading, setSearchParams]);
+
+  // Anything that changes a task or a list somewhere else: pull fresh data.
+  useEffect(() => {
+    let timer;
+    const refresh = () => { clearTimeout(timer); timer = setTimeout(fetchLists, 250); };
+    const events = ["task_created", "task_updated", "task_deleted", "tasklist_changed", "connect"];
+    events.forEach((e) => socket.on(e, refresh));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => socket.off(e, refresh));
+    };
+  }, [fetchLists]);
+
+  const updateTaskInLists = (updated) =>
+    setLists((prev) => prev.map((l) => ({ ...l, tasks: l.tasks.map((t) => (t.id === updated.id ? updated : t)) })));
+
+  const removeTaskFromLists = (id) =>
+    setLists((prev) => prev.map((l) => ({ ...l, tasks: l.tasks.filter((t) => t.id !== id) })));
+
+  const createList = async (e) => {
+    e.preventDefault();
+    const name = newListName.trim();
+    if (!name) return;
+    setSavingList(true);
     try {
       const res = await api.post("/tasklists/", { name });
-      setTaskLists((prev) => ({ ...prev, [res.data.id]: { name, tasks: [] } }));
-    } catch {
-      // non-fatal
+      setLists((prev) => [...prev, { ...res.data, tasks: res.data.tasks || [] }]);
+      setNewListName("");
+      setCreating(false);
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't create the list."), "danger");
+    } finally {
+      setSavingList(false);
     }
   };
 
-  const commitListRename = async (tasklist_id) => {
-    const trimmed = newListTitle.trim();
-    if (trimmed && trimmed !== taskLists[tasklist_id].name) {
-      try {
-        await api.put(`/tasklists/${tasklist_id}`, { name: trimmed });
-        setTaskLists((prev) => ({
-          ...prev,
-          [tasklist_id]: { ...prev[tasklist_id], name: trimmed },
-        }));
-      } catch {
-        // non-fatal
-      }
-    }
+  const commitRename = async (list) => {
+    const name = editingName.trim();
     setEditingListId(null);
+    if (!name || name === list.name) return;
+    try {
+      await api.put(`/tasklists/${list.id}`, { name });
+      setLists((prev) => prev.map((l) => (l.id === list.id ? { ...l, name } : l)));
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't rename the list."), "danger");
+    }
   };
 
-  const deleteTaskList = async (tasklist_id) => {
-    if (!window.confirm("Delete this list and all its tasks?")) return;
+  const deleteList = async (list) => {
+    const n = list.tasks.length;
+    const detail = n ? `${n} task${n === 1 ? "" : "s"} (with their subtasks, comments and attachments)` : "it";
+    if (!window.confirm(`Delete “${list.name}” and ${detail}? This can't be undone.`)) return;
     try {
-      await api.delete(`/tasklists/${tasklist_id}`);
-      setTaskLists((prev) => {
-        const next = { ...prev };
-        delete next[tasklist_id];
-        return next;
-      });
-    } catch {
-      // non-fatal
+      await api.delete(`/tasklists/${list.id}`);
+      setLists((prev) => prev.filter((l) => l.id !== list.id));
+    } catch (err) {
+      toast(errorMessage(err, "Couldn't delete the list."), "danger");
     }
   };
 
   const handleDragEnd = async ({ source, destination, draggableId }) => {
     if (!destination) return;
-    const sourceList = [...taskLists[source.droppableId].tasks];
-    const destList = [...taskLists[destination.droppableId].tasks];
-    const [moved] = sourceList.splice(source.index, 1);
-    destList.splice(destination.index, 0, moved);
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    setTaskLists((prev) => ({
-      ...prev,
-      [source.droppableId]: { ...prev[source.droppableId], tasks: sourceList },
-      [destination.droppableId]: { ...prev[destination.droppableId], tasks: destList },
-    }));
+    const sourceId = Number(source.droppableId);
+    const destId = Number(destination.droppableId);
+    const snapshot = lists;
+
+    const next = lists.map((l) => ({ ...l, tasks: [...l.tasks] }));
+    const from = next.find((l) => l.id === sourceId);
+    const to = next.find((l) => l.id === destId);
+    const [moved] = from.tasks.splice(source.index, 1);
+    to.tasks.splice(destination.index, 0, { ...moved, tasklist_id: destId });
+    setLists(next);
 
     try {
-      await api.patch(`/tasks/${moved.id}`, { tasklist_id: Number(destination.droppableId) });
-    } catch {
-      // non-fatal — optimistic update already applied
+      if (sourceId === destId) {
+        await api.patch(`/tasklists/${destId}/reorder`, { order: to.tasks.map((t) => t.id) });
+      } else {
+        await api.patch(`/tasks/${Number(draggableId)}`, { tasklist_id: destId, list_index: destination.index });
+      }
+    } catch (err) {
+      setLists(snapshot);
+      toast(errorMessage(err, "Couldn't move that task."), "danger");
     }
   };
 
-  const addTask = (tasklist_id, newTask) => {
-    setTaskLists((prev) => ({
-      ...prev,
-      [tasklist_id]: { ...prev[tasklist_id], tasks: [...prev[tasklist_id].tasks, newTask] },
-    }));
-    setOpenTaskForm(null);
-  };
+  if (loading) return <div className="flex justify-center py-20"><Spinner className="text-primary" /></div>;
+  if (error) {
+    return (
+      <div className="p-6 space-y-3">
+        <Alert variant="danger">{error}</Alert>
+        <Button variant="outline" onClick={() => { setLoading(true); fetchLists(); }}>Try again</Button>
+      </div>
+    );
+  }
+
+  const addTarget = lists.find((l) => l.id === addingToList);
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 p-6 overflow-x-auto h-full">
-        {Object.keys(taskLists).map((tasklist_id) => (
-          <Droppable key={tasklist_id} droppableId={String(tasklist_id)}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex flex-col w-72 min-w-[18rem] max-h-[calc(100vh-7rem)] bg-surface rounded-xl shadow-card border border-border"
-              >
-                {/* Column header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  {editingListId === tasklist_id ? (
-                    <input
-                      className="flex-1 text-sm font-semibold text-text bg-transparent border-b border-primary focus:outline-none mr-2"
-                      value={newListTitle}
-                      onChange={(e) => setNewListTitle(e.target.value)}
-                      onBlur={() => commitListRename(tasklist_id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitListRename(tasklist_id);
-                        if (e.key === "Escape") setEditingListId(null);
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <button
-                      className="flex-1 text-left text-sm font-semibold text-text hover:text-primary transition-colors truncate mr-2"
-                      onClick={() => {
-                        setEditingListId(tasklist_id);
-                        setNewListTitle(taskLists[tasklist_id].name);
-                      }}
-                    >
-                      {taskLists[tasklist_id].name}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => deleteTaskList(tasklist_id)}
-                    className="p-1 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors flex-shrink-0"
-                    aria-label="Delete list"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+      <div className="flex gap-4 p-4 sm:p-6 overflow-x-auto h-full items-start">
+        {lists.length === 0 && !creating && (
+          <div className="max-w-sm py-10 space-y-3">
+            <h1 className="text-xl font-bold text-text">No lists yet</h1>
+            <p className="text-sm text-text-muted">Create a list to start organising tasks.</p>
+          </div>
+        )}
 
-                {/* Task cards */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                  {(taskLists[tasklist_id]?.tasks || []).map((task, index) => (
-                    <Draggable key={task.id} draggableId={String(task.id)} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <TaskBoard task={task} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
+        {lists.map((list) => {
+          const isOwner = list.user_id === user?.id;
+          return (
+            <Droppable key={list.id} droppableId={String(list.id)}>
+              {(provided) => (
+                <section
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  aria-label={list.name}
+                  className="flex flex-col w-72 min-w-[18rem] max-h-[calc(100vh-7rem)] bg-surface rounded-xl shadow-card border border-border"
+                >
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+                    {editingListId === list.id ? (
+                      <input
+                        aria-label="List name"
+                        className="flex-1 min-w-0 text-sm font-semibold text-text bg-transparent border-b border-primary focus:outline-none"
+                        value={editingName}
+                        maxLength={120}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => commitRename(list)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") { setEditingName(list.name); setEditingListId(null); }
+                        }}
+                        autoFocus
+                      />
+                    ) : (
+                      <div className="flex-1 min-w-0">
+                        {isOwner ? (
+                          <button
+                            className="block w-full text-left text-sm font-semibold text-text hover:text-primary transition-colors truncate"
+                            title="Click to rename"
+                            onClick={() => { setEditingListId(list.id); setEditingName(list.name); }}
+                          >
+                            {list.name}
+                          </button>
+                        ) : (
+                          <h2 className="text-sm font-semibold text-text truncate">{list.name}</h2>
+                        )}
+                        {!isOwner && list.owner_name && (
+                          <p className="text-[11px] text-text-muted truncate">by {list.owner_name}</p>
+                        )}
+                      </div>
+                    )}
+                    {isOwner && (
+                      <button
+                        onClick={() => deleteList(list)}
+                        className="p-1 rounded text-text-muted hover:text-danger hover:bg-danger/10 transition-colors flex-shrink-0"
+                        aria-label={`Delete list ${list.name}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
 
-                {/* Add task button */}
-                <div className="px-3 py-3 border-t border-border">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    fullWidth
-                    onClick={() => setOpenTaskForm(tasklist_id)}
-                    className="justify-start gap-2"
-                  >
-                    <Plus size={15} />
-                    Add task
-                  </Button>
-                </div>
-              </div>
-            )}
-          </Droppable>
-        ))}
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[3rem]">
+                    {list.tasks.length === 0 && (
+                      <p className="text-xs text-text-muted text-center py-3">No tasks yet</p>
+                    )}
+                    {list.tasks.map((task, index) => (
+                      <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+                        {(drag) => (
+                          <div ref={drag.innerRef} {...drag.draggableProps} {...drag.dragHandleProps}>
+                            <TaskBoard
+                              task={task}
+                              autoOpen={task.id === openTaskId}
+                              onTaskChange={updateTaskInLists}
+                              onTaskDelete={removeTaskFromLists}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
 
-        {/* Add new list */}
+                  <div className="px-3 py-3 border-t border-border">
+                    <Button variant="ghost" size="sm" fullWidth onClick={() => setAddingToList(list.id)} className="justify-start gap-2">
+                      <Plus size={15} /> Add task
+                    </Button>
+                  </div>
+                </section>
+              )}
+            </Droppable>
+          );
+        })}
+
         <div className="flex-shrink-0 pt-1">
-          <Button variant="outline" onClick={addTaskList} className="gap-2 whitespace-nowrap">
-            <Plus size={15} />
-            Add List
-          </Button>
+          {creating ? (
+            <form onSubmit={createList} className="w-72 bg-surface border border-border rounded-xl p-3 space-y-2">
+              <input
+                aria-label="New list name"
+                className="w-full px-3 py-2 rounded border border-border text-sm text-text bg-page focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="List name"
+                maxLength={120}
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") { setCreating(false); setNewListName(""); } }}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" loading={savingList} disabled={!newListName.trim()}><Check size={14} /> Add list</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => { setCreating(false); setNewListName(""); }}>
+                  <X size={14} /> Cancel
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <Button variant="outline" onClick={() => setCreating(true)} className="gap-2 whitespace-nowrap">
+              <Plus size={15} /> Add List
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Add task modal */}
-      {openTaskForm && (
-        <Modal
-          open
-          onClose={() => setOpenTaskForm(null)}
-          title={`Add task to "${taskLists[openTaskForm]?.name}"`}
-          size="md"
-        >
-          <TaskForm
-            onTaskAdded={(task) => addTask(openTaskForm, task)}
-            tasklistId={openTaskForm}
-          />
-        </Modal>
-      )}
+      <Modal open={Boolean(addTarget)} onClose={() => setAddingToList(null)} title={`Add task to “${addTarget?.name ?? ""}”`}>
+        <TaskForm
+          tasklists={addTarget ? [addTarget] : []}
+          tasklistId={addTarget?.id}
+          onTaskAdded={(task) => {
+            setLists((prev) => prev.map((l) => (l.id === task.tasklist_id ? { ...l, tasks: [...l.tasks, task] } : l)));
+            setAddingToList(null);
+            toast("Task added.", "success");
+          }}
+        />
+      </Modal>
     </DragDropContext>
   );
 };

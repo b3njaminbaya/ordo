@@ -1,9 +1,13 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../../api/axios";
-import { PriorityBadge, Spinner, Alert } from "../ui";
+import { errorMessage } from "../../api/errors";
+import { Button, PriorityBadge, Spinner, Alert } from "../ui";
+import { parseDueDate } from "../../utils/time";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const pad = (n) => String(n).padStart(2, "0");
 
 function buildCalendarDays(year, month) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -21,160 +25,140 @@ export default function CalendarView() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(today.getMonth() === month ? today.getDate() : null);
 
   const fetchTasks = useCallback(async (y, m) => {
     setLoading(true);
     setError(null);
-    const pad = (n) => String(n).padStart(2, "0");
     const start = `${y}-${pad(m + 1)}-01`;
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    const end = `${y}-${pad(m + 1)}-${pad(lastDay)}`;
+    const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
     try {
       const res = await api.get(`/tasks/calendar?start=${start}&end=${end}`);
       setTasks(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      setError("Failed to load calendar tasks.");
+    } catch (err) {
+      setError(errorMessage(err, "Failed to load calendar tasks."));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchTasks(year, month);
-    setSelected(null);
-  }, [year, month, fetchTasks]);
+  useEffect(() => { fetchTasks(year, month); }, [year, month, fetchTasks]);
 
-  const prevMonth = () => {
-    if (month === 0) { setYear((y) => y - 1); setMonth(11); }
-    else setMonth((m) => m - 1);
-  };
+  const goTo = (y, m, day = null) => { setYear(y); setMonth(m); setSelected(day); };
+  const prevMonth = () => (month === 0 ? goTo(year - 1, 11) : goTo(year, month - 1));
+  const nextMonth = () => (month === 11 ? goTo(year + 1, 0) : goTo(year, month + 1));
+  const goToday = () => goTo(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const nextMonth = () => {
-    if (month === 11) { setYear((y) => y + 1); setMonth(0); }
-    else setMonth((m) => m + 1);
-  };
-
-  const tasksByDay = {};
-  tasks.forEach((t) => {
-    if (!t.due_date) return;
-    const d = new Date(t.due_date).getDate();
-    if (!tasksByDay[d]) tasksByDay[d] = [];
-    tasksByDay[d].push(t);
-  });
+  const tasksByDay = useMemo(() => {
+    const map = {};
+    tasks.forEach((t) => {
+      const due = parseDueDate(t.due_date);
+      if (!due) return;
+      (map[due.getDate()] ||= []).push(t);
+    });
+    return map;
+  }, [tasks]);
 
   const days = buildCalendarDays(year, month);
   const monthLabel = new Date(year, month, 1).toLocaleString("default", { month: "long", year: "numeric" });
   const todayDay = today.getFullYear() === year && today.getMonth() === month ? today.getDate() : null;
-
-  const selectedTasks = selected ? (tasksByDay[selected] || []) : [];
+  const selectedTasks = selected ? tasksByDay[selected] || [] : [];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-text">Calendar</h1>
         <div className="flex items-center gap-2">
-          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-muted hover:text-text">
+          <Button variant="outline" size="sm" onClick={goToday}>Today</Button>
+          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-muted hover:text-text" aria-label="Previous month">
             <ChevronLeft size={18} />
           </button>
-          <span className="text-sm font-semibold text-text min-w-[160px] text-center">{monthLabel}</span>
-          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-muted hover:text-text">
+          <span className="text-sm font-semibold text-text min-w-[150px] text-center" aria-live="polite">{monthLabel}</span>
+          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-surface-muted transition-colors text-text-muted hover:text-text" aria-label="Next month">
             <ChevronRight size={18} />
           </button>
         </div>
       </div>
 
-      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+      {error && (
+        <div className="mb-4 space-y-2">
+          <Alert variant="danger">{error}</Alert>
+          <Button variant="outline" size="sm" onClick={() => fetchTasks(year, month)}>Try again</Button>
+        </div>
+      )}
 
-      {/* Grid */}
       <div className="bg-surface rounded-xl shadow-card border border-border overflow-hidden">
-        {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((day) => (
-            <div key={day} className="py-2 text-center text-xs font-semibold text-text-muted uppercase tracking-wide">
-              {day}
-            </div>
+            <div key={day} className="py-2 text-center text-xs font-semibold text-text-muted uppercase tracking-wide">{day}</div>
           ))}
         </div>
 
-        {/* Day cells */}
         {loading ? (
-          <div className="flex justify-center py-12"><Spinner /></div>
+          <div className="flex justify-center py-12"><Spinner className="text-primary" /></div>
         ) : (
           <div className="grid grid-cols-7">
             {days.map((day, idx) => {
-              const dayTasks = day ? (tasksByDay[day] || []) : [];
-              const isToday = day === todayDay;
+              if (!day) return <div key={idx} className="min-h-[80px] border-b border-r border-border bg-surface-muted/50" />;
+              const dayTasks = tasksByDay[day] || [];
               const isSelected = day === selected;
+              const label = `${new Date(year, month, day).toLocaleDateString("default", { weekday: "long", month: "long", day: "numeric" })}, ${dayTasks.length} task${dayTasks.length === 1 ? "" : "s"} due`;
               return (
-                <div
+                <button
                   key={idx}
-                  onClick={() => day && setSelected(isSelected ? null : day)}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelected(isSelected ? null : day)}
                   className={[
-                    "min-h-[80px] p-2 border-b border-r border-border last:border-r-0 transition-colors",
-                    day ? "cursor-pointer hover:bg-primary/5" : "bg-surface-muted/50",
+                    "min-h-[80px] p-1.5 sm:p-2 border-b border-r border-border text-left align-top transition-colors hover:bg-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
                     isSelected ? "bg-primary/10" : "",
                   ].join(" ")}
                 >
-                  {day && (
-                    <>
-                      <span
-                        className={[
-                          "inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-semibold mb-1",
-                          isToday ? "bg-primary text-white" : "text-text-muted",
-                        ].join(" ")}
-                      >
-                        {day}
+                  <span className={["inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-semibold mb-1", day === todayDay ? "bg-primary text-white" : "text-text-muted"].join(" ")}>
+                    {day}
+                  </span>
+                  <span className="block space-y-0.5">
+                    {dayTasks.slice(0, 2).map((t) => (
+                      <span key={t.id} className="block text-xs truncate px-1 py-0.5 rounded bg-primary/10 text-primary font-medium" title={t.title}>
+                        {t.title}
                       </span>
-                      <div className="space-y-0.5">
-                        {dayTasks.slice(0, 2).map((t) => (
-                          <div
-                            key={t.id}
-                            className="text-xs truncate px-1 py-0.5 rounded bg-primary/10 text-primary font-medium"
-                            title={t.title}
-                          >
-                            {t.title}
-                          </div>
-                        ))}
-                        {dayTasks.length > 2 && (
-                          <div className="text-xs text-text-muted px-1">+{dayTasks.length - 2} more</div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
+                    ))}
+                    {dayTasks.length > 2 && <span className="block text-xs text-text-muted px-1">+{dayTasks.length - 2} more</span>}
+                  </span>
+                </button>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Selected day task list */}
-      {selected && selectedTasks.length > 0 && (
+      {selected && !loading && (
         <div className="mt-6">
           <h2 className="text-base font-semibold text-text mb-3">
             Tasks due {new Date(year, month, selected).toLocaleDateString("default", { month: "long", day: "numeric" })}
           </h2>
-          <ul className="space-y-2">
-            {selectedTasks.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between bg-surface rounded-lg px-4 py-3 shadow-card border border-border"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-text">{t.title}</p>
-                  {t.description && (
-                    <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{t.description}</p>
-                  )}
-                </div>
-                <PriorityBadge priority={t.priority} />
-              </li>
-            ))}
-          </ul>
+          {selectedTasks.length === 0 ? (
+            <p className="text-sm text-text-muted">No tasks due on this day.</p>
+          ) : (
+            <ul className="space-y-2">
+              {selectedTasks.map((t) => (
+                <li key={t.id}>
+                  <Link
+                    to={`/workspace/kanban?task=${t.id}`}
+                    className="flex items-center justify-between gap-3 bg-surface rounded-lg px-4 py-3 shadow-card border border-border hover:border-primary/40 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-text truncate">{t.title}</p>
+                      {t.description && <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{t.description}</p>}
+                    </div>
+                    <PriorityBadge priority={t.priority} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
-      {selected && selectedTasks.length === 0 && (
-        <p className="mt-4 text-sm text-text-muted">No tasks due on this day.</p>
       )}
     </div>
   );

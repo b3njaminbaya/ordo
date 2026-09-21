@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, CheckCircle } from "lucide-react";
 import api from "../../api/axios";
+import { errorMessage } from "../../api/errors";
 import { Button, Alert } from "../ui";
 
 const ResetPassword = () => {
@@ -19,8 +20,8 @@ const ResetPassword = () => {
     e.preventDefault();
     setError("");
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -34,7 +35,7 @@ const ResetPassword = () => {
       setSuccess(true);
       setTimeout(() => navigate("/"), 4000);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to reset password. The link may have expired.");
+      setError(errorMessage(err, "Failed to reset password. The link may have expired."));
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,7 @@ const ResetPassword = () => {
             </div>
             <h1 className="text-2xl font-bold text-text">Set new password</h1>
             <p className="text-sm text-text-muted mt-2 text-center max-w-xs">
-              Choose a strong password for your Teevexa Ordo account.
+              Choose a strong password for your Ordo account.
             </p>
           </div>
 
@@ -79,7 +80,8 @@ const ResetPassword = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
+                    placeholder="Min. 8 characters"
+                    autoComplete="new-password"
                     required
                     className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-text bg-page placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
                   />
@@ -105,6 +107,7 @@ const ResetPassword = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
+                    autoComplete="new-password"
                     required
                     className="w-full px-4 py-2.5 pr-10 border border-border rounded-lg text-sm text-text bg-page placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
                   />

@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
-import Notifications from "./Notifications";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import api from "../../api/axios";
+import { errorMessage } from "../../api/errors";
 import { motion } from "framer-motion";
 import { Bar, Line } from "react-chartjs-2";
 import {
@@ -11,7 +12,7 @@ import {
   BarElement, LineElement, PointElement,
   Title, Tooltip, Legend, Filler,
 } from "chart.js";
-import { Card } from "../ui";
+import { Card, Spinner, useToast } from "../ui";
 
 ChartJS.register(
   CategoryScale, LinearScale,
@@ -19,11 +20,13 @@ ChartJS.register(
   Title, Tooltip, Legend, Filler,
 );
 
+// Every status on the board, so the cards always add up to the total.
 const STAT_CONFIG = [
-  { key: "completed",  label: "Completed",  cardClass: "bg-success",  chartColor: "#10B981" },
-  { key: "pending",    label: "Pending",    cardClass: "bg-warning",  chartColor: "#F59E0B" },
-  { key: "inProgress", label: "Ongoing",    cardClass: "bg-primary",  chartColor: "#6366F1" },
-  { key: "overdue",    label: "Overdue",    cardClass: "bg-danger",   chartColor: "#EF4444" },
+  { key: "todo",       label: "To Do",       cardClass: "bg-text-muted", chartColor: "#94A3B8" },
+  { key: "inProgress", label: "In Progress", cardClass: "bg-primary",    chartColor: "#6366F1" },
+  { key: "pending",    label: "In Review",   cardClass: "bg-warning",    chartColor: "#F59E0B" },
+  { key: "completed",  label: "Done",        cardClass: "bg-success",    chartColor: "#10B981" },
+  { key: "overdue",    label: "Overdue",     cardClass: "bg-danger",     chartColor: "#EF4444" },
 ];
 
 function buildChartOptions(isDark, horizontal = false) {
@@ -43,22 +46,36 @@ function buildChartOptions(isDark, horizontal = false) {
 const Dashboard = () => {
   const { user } = useAuth();
   const { resolvedTheme } = useTheme();
-  const [taskStats,     setTaskStats]     = useState({ completed: 0, pending: 0, inProgress: 0, overdue: 0, total: 0, overdueRate: 0 });
+  const toast = useToast();
+  const [loading,       setLoading]       = useState(true);
+  const [taskStats,     setTaskStats]     = useState({ todo: 0, completed: 0, pending: 0, inProgress: 0, overdue: 0, total: 0, overdueRate: 0 });
   const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [velocity,      setVelocity]      = useState([]);
   const [workload,      setWorkload]      = useState([]);
 
   useEffect(() => {
-    api.get("/api/task-stats").then((r) => setTaskStats(r.data)).catch(() => {});
-    api.get("/api/upcoming-tasks").then((r) => setUpcomingTasks(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    api.get("/api/task-stats/velocity").then((r) => setVelocity(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    api.get("/api/task-stats/workload").then((r) => setWorkload(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-  }, []);
+    let cancelled = false;
+    Promise.all([
+      api.get("/api/task-stats"),
+      api.get("/api/upcoming-tasks"),
+      api.get("/api/task-stats/velocity"),
+      api.get("/api/task-stats/workload"),
+    ])
+      .then(([stats, upcoming, vel, work]) => {
+        if (cancelled) return;
+        setTaskStats(stats.data);
+        setUpcomingTasks(Array.isArray(upcoming.data) ? upcoming.data : []);
+        setVelocity(Array.isArray(vel.data) ? vel.data : []);
+        setWorkload(Array.isArray(work.data) ? work.data : []);
+      })
+      .catch((err) => { if (!cancelled) toast(errorMessage(err, "Couldn't load the dashboard."), "danger"); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [toast]);
 
-  const isDark          = resolvedTheme === "dark";
-  const chartOptions    = useMemo(() => buildChartOptions(isDark),       [isDark]);
-  const velocityOptions = useMemo(() => buildChartOptions(isDark),       [isDark]);
-  const workloadOptions = useMemo(() => buildChartOptions(isDark, true), [isDark]);
+  const isDark        = resolvedTheme === "dark";
+  const chartOptions  = useMemo(() => buildChartOptions(isDark), [isDark]);
+  const hasVelocity   = velocity.some((w) => w.completed > 0);
 
   const chartData = {
     labels: STAT_CONFIG.map((s) => s.label),
@@ -88,8 +105,8 @@ const Dashboard = () => {
     labels: workload.map((m) => m.username),
     datasets: [
       {
-        label: "Open",
-        data: workload.map((m) => m.open),
+        label: "Open (on track)",
+        data: workload.map((m) => Math.max(0, m.open - m.overdue)),
         backgroundColor: "rgba(99,102,241,0.75)",
         borderRadius: 4,
       },
@@ -115,22 +132,21 @@ const Dashboard = () => {
     };
   }, [isDark]);
 
+  if (loading) return <div className="flex justify-center py-20"><Spinner className="text-primary" /></div>;
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text">Hi, {user?.username}!</h1>
-          {taskStats.total > 0 && (
-            <p className="text-sm text-text-muted mt-0.5">
-              {taskStats.overdueRate}% overdue rate · {taskStats.total} total tasks
-            </p>
-          )}
-        </div>
-        <Notifications />
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-text">Hi, {user?.username}!</h1>
+        {taskStats.total > 0 && (
+          <p className="text-sm text-text-muted mt-0.5">
+            {taskStats.total} task{taskStats.total === 1 ? "" : "s"} in {user?.workspace?.name} · {taskStats.overdueRate}% overdue
+          </p>
+        )}
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         {STAT_CONFIG.map((stat, i) => (
           <motion.div
             key={stat.key}
@@ -140,7 +156,7 @@ const Dashboard = () => {
           >
             <div className={`${stat.cardClass} text-white rounded-xl p-5 text-center`}>
               <p className="text-sm font-medium opacity-90">{stat.label}</p>
-              <p className="text-4xl font-bold mt-1">{taskStats[stat.key]}</p>
+              <p className="text-4xl font-bold mt-1">{taskStats[stat.key] ?? 0}</p>
             </div>
           </motion.div>
         ))}
@@ -150,15 +166,15 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>
           <h2 className="text-base font-semibold text-text mb-4">Task Distribution</h2>
-          <Bar data={chartData} options={chartOptions} />
+          <Bar data={chartData} options={chartOptions} role="img" aria-label="Bar chart of tasks by status" />
         </Card>
 
         <Card>
           <h2 className="text-base font-semibold text-text mb-4">Weekly Velocity</h2>
-          {velocity.length > 0 ? (
-            <Line data={velocityData} options={velocityOptions} />
+          {hasVelocity ? (
+            <Line data={velocityData} options={chartOptions} role="img" aria-label="Line chart of tasks completed per week" />
           ) : (
-            <p className="text-sm text-text-muted pt-4">No completion data yet.</p>
+            <p className="text-sm text-text-muted pt-4">Nothing completed in the last 8 weeks yet.</p>
           )}
         </Card>
       </div>
@@ -167,8 +183,8 @@ const Dashboard = () => {
       {workload.length > 0 && (
         <div className="mb-6">
           <Card>
-            <h2 className="text-base font-semibold text-text mb-4">Workload per Member</h2>
-            <Bar data={workloadData} options={workloadStackedOptions} />
+            <h2 className="text-base font-semibold text-text mb-4">Open work per person</h2>
+            <Bar data={workloadData} options={workloadStackedOptions} role="img" aria-label="Stacked bar chart of open and overdue tasks per person" />
           </Card>
         </div>
       )}
@@ -186,12 +202,14 @@ const Dashboard = () => {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-surface rounded-lg px-4 py-3 shadow-card border border-border"
               >
-                <p className="text-sm font-semibold text-text">{task.title}</p>
-                <p className="text-xs text-text-muted mt-0.5">
-                  Due: {task.dueDate ?? "No deadline"}
-                </p>
+                <Link
+                  to={`/workspace/kanban?task=${task.id}`}
+                  className="block bg-surface rounded-lg px-4 py-3 shadow-card border border-border hover:border-primary/40 transition-colors"
+                >
+                  <p className="text-sm font-semibold text-text">{task.title}</p>
+                  <p className="text-xs text-text-muted mt-0.5">Due: {task.dueDate ?? "No deadline"}</p>
+                </Link>
               </motion.li>
             ))}
           </ul>

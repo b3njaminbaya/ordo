@@ -1,365 +1,501 @@
-from flask import Blueprint, request, make_response, jsonify, current_app, send_from_directory
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
-from models import db, User, Workspace, WorkspaceInvite
-from flask_mail import Message
-from functools import wraps
-import secrets
 import os
+import re
+import secrets
 import uuid
+from datetime import timedelta
+from functools import wraps
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+import structlog
+from flask import Blueprint, abort, current_app, jsonify, request, send_from_directory
+from flask_jwt_extended import jwt_required
+from flask_mail import Message
+from sqlalchemy.exc import IntegrityError
+from werkzeug.security import check_password_hash, generate_password_hash
 
-def _allowed(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+from access import current_user, is_workspace_owner, same_workspace
+from files import (
+    attachment_dir, attachment_filenames_for_lists, image_extension, remove_files, upload_root,
+)
+from models import (
+    db, TaskList, User, Workspace, WorkspaceInvite,
+)
+from validation import (
+    json_body, normalize_email, utcnow_naive, validate_email, validate_password, validate_username,
+)
+from views.auth import create_personal_workspace, issue_tokens, user_payload
+from workspace_service import hand_over_workspace, other_members
 
+logger = structlog.get_logger()
 user_bp = Blueprint("user_bp", __name__)
 
-# Admin access decorator
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
+EMAIL_INVITE_TTL = timedelta(days=7)
+LINK_INVITE_TTL = timedelta(days=14)
+_UPLOAD_NAME_RE = re.compile(r"^[a-f0-9]{32}\.(png|jpg|jpeg|gif|webp)$")
+
+
 def admin_required(fn):
     @jwt_required()
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        user_id = get_jwt_identity()
-        current_user = db.session.get(User, user_id)
-
-        if not current_user or current_user.role != "admin":
-            return make_response({"error": "Admin access required"}), 403
-
+        user = current_user()
+        if not user or user.role != "admin":
+            return jsonify({"error": "Admin access required"}), 403
         return fn(*args, **kwargs)
-
     return wrapper
 
-# Get all users (Admin only)
+
+# ── Users ─────────────────────────────────────────────────────────────────────
+
 @user_bp.route("/users", methods=["GET"])
 @admin_required
 def get_users():
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 10, type=int)
-
-    users = User.query.paginate(page=page, per_page=per_page, error_out=False)
-
+    per_page = min(request.args.get("per_page", 10, type=int), 100)
+    users = User.query.order_by(User.id).paginate(page=page, per_page=per_page, error_out=False)
     return jsonify({
         "users": [
-            {"id": user.id, "username": user.username, "email": user.email, "role": user.role}
-            for user in users.items
+            {"id": u.id, "username": u.username, "email": u.email, "role": u.role}
+            for u in users.items
         ],
         "total": users.total,
         "pages": users.pages,
         "current_page": users.page,
         "next_page": users.next_num if users.has_next else None,
-        "prev_page": users.prev_num if users.has_prev else None
+        "prev_page": users.prev_num if users.has_prev else None,
     }), 200
 
-# Get a specific user by ID
+
 @user_bp.route("/users/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_user(user_id):
-    user = db.session.get(User, user_id)
-    if not user:
-        return make_response({"error": "User not found"}), 404
+    me = current_user()
+    target = db.session.get(User, user_id)
+    # Only people you share a workspace with are visible; anyone else looks like "not found".
+    if not me or not target or not same_workspace(me, target.id):
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"id": target.id, "username": target.username, "email": target.email}), 200
 
-    return make_response({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email
-    }), 200
 
-# Update user profile
 @user_bp.route("/users/updateprofile", methods=["PATCH"])
 @jwt_required()
 def update_user():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)  
-
+    user = current_user()
     if not user:
-        return make_response({"error": "User not found"}), 404  
+        return jsonify({"error": "User not found"}), 404
 
-    data = request.get_json()
+    data = json_body()
     username = data.get("username", user.username)
-    email = data.get("email", user.email)
+    email = normalize_email(data.get("email", user.email))
+    username = username.strip() if isinstance(username, str) else username
 
-    # Ensure new email is unique
-    if email != user.email and User.query.filter_by(email=email).first():
-        return make_response({"error": "Email already in use"}), 400
+    if username != user.username:
+        err = validate_username(username)
+        if err:
+            return jsonify({"error": err}), 400
+        if User.query.filter(db.func.lower(User.username) == username.lower(), User.id != user.id).first():
+            return jsonify({"error": "Username already in use"}), 409
+    if email != user.email.lower():
+        err = validate_email(email)
+        if err:
+            return jsonify({"error": err}), 400
+        if User.query.filter(db.func.lower(User.email) == email, User.id != user.id).first():
+            return jsonify({"error": "Email already in use"}), 409
+    else:
+        email = user.email
 
     user.username = username
     user.email = email
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Username or email already in use"}), 409
+    return jsonify({"success": "User updated successfully", "user": user_payload(user)}), 200
 
-    db.session.commit()
-    return make_response({"success": "User updated successfully"}), 200
 
-# Upload profile picture
 @user_bp.route("/users/profile-picture", methods=["POST"])
 @jwt_required()
 def upload_profile_picture():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
+    user = current_user()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    if "file" not in request.files:
+    file = request.files.get("file")
+    if file is None or not file.filename:
         return jsonify({"error": "No file provided"}), 400
 
-    file = request.files["file"]
-    if file.filename == "" or not _allowed(file.filename):
+    data = file.read(MAX_AVATAR_BYTES + 1)
+    if len(data) > MAX_AVATAR_BYTES:
+        return jsonify({"error": "File too large. Maximum 5 MB."}), 400
+    ext = image_extension(data[:16])
+    if ext is None:
         return jsonify({"error": "Invalid file type. Use PNG, JPG, GIF, or WebP."}), 400
 
-    if len(file.read()) > 5 * 1024 * 1024:
-        return jsonify({"error": "File too large. Maximum 5 MB."}), 400
-    file.seek(0)
-
-    upload_dir = os.path.join(current_app.root_path, "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-
-    # Remove old picture
-    if user.profile_picture:
-        old_path = os.path.join(upload_dir, user.profile_picture)
-        if os.path.exists(old_path):
-            os.remove(old_path)
-
-    ext = secure_filename(file.filename).rsplit(".", 1)[1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
-    file.save(os.path.join(upload_dir, filename))
+    with open(os.path.join(upload_root(), filename), "wb") as fh:
+        fh.write(data)
 
+    old = user.profile_picture
     user.profile_picture = filename
     db.session.commit()
+    if old:
+        remove_files(upload_root(), [old])
 
-    base_url = current_app.config.get("FRONTEND_URL", request.host_url.rstrip("/"))
     return jsonify({"profile_picture_url": f"/uploads/{filename}"}), 200
 
 
-# Serve uploaded files
 @user_bp.route("/uploads/<path:filename>", methods=["GET"])
 def serve_upload(filename):
-    upload_dir = os.path.join(current_app.root_path, "uploads")
-    return send_from_directory(upload_dir, filename)
+    """Public avatars only (needed by <img> tags). Task attachments live in a
+    subfolder and are only reachable through the authenticated download route."""
+    if not _UPLOAD_NAME_RE.match(filename):
+        abort(404)
+    response = send_from_directory(upload_root(), filename)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
-# Change password
 @user_bp.route("/users/change-password", methods=["PATCH"])
 @jwt_required()
 def change_password():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
+    user = current_user()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    data = request.get_json()
-    current_password = data.get("current_password", "")
-    new_password = data.get("new_password", "")
+    data = json_body()
+    current_password = data.get("current_password") or ""
+    new_password = data.get("new_password") or ""
 
     if not current_password or not new_password:
         return jsonify({"error": "Both current and new password are required"}), 400
     if not check_password_hash(user.password, current_password):
         return jsonify({"error": "Current password is incorrect"}), 400
-    if len(new_password) < 6:
-        return jsonify({"error": "New password must be at least 6 characters"}), 400
+    err = validate_password(new_password)
+    if err:
+        return jsonify({"error": err}), 400
 
     user.password = generate_password_hash(new_password)
+    user.password_changed_at = utcnow_naive().replace(microsecond=0)  # revokes every existing token
     db.session.commit()
-    return jsonify({"success": "Password updated successfully"}), 200
+    # Fresh tokens so this browser stays signed in; every other session is signed out.
+    return jsonify({"success": "Password updated successfully", **issue_tokens(user)}), 200
 
 
-# Toggle notifications
 @user_bp.route("/users/notifications", methods=["PATCH"])
 @jwt_required()
 def toggle_notifications():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
+    user = current_user()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    data = request.get_json()
-    enabled = data.get("notifications_enabled")
-    if enabled is None:
-        return jsonify({"error": "notifications_enabled field required"}), 400
+    enabled = json_body().get("notifications_enabled")
+    if not isinstance(enabled, bool):
+        return jsonify({"error": "notifications_enabled (true/false) is required"}), 400
 
-    user.notifications_enabled = bool(enabled)
+    user.notifications_enabled = enabled
     db.session.commit()
-    return jsonify({"success": "Notification preference updated", "notifications_enabled": user.notifications_enabled}), 200
+    return jsonify({"success": "Notification preference updated", "notifications_enabled": enabled}), 200
 
 
-# Delete user account
 @user_bp.route("/users/deleteaccount", methods=["DELETE"])
 @jwt_required()
 def delete_user():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)  
-
+    user = current_user()
     if not user:
-        return make_response({"error": "User not found"}), 404  
+        return jsonify({"error": "User not found"}), 404
+
+    if not check_password_hash(user.password, json_body().get("password") or ""):
+        return jsonify({"error": "Password is incorrect"}), 400
+
+    # Teammates keep the shared lists; a lone user's data is deleted with them.
+    kept = hand_over_workspace(user)
+    orphan_files = []
+    if not kept:
+        orphan_files = attachment_filenames_for_lists([tl.id for tl in TaskList.query.filter_by(user_id=user.id)])
+    avatar = user.profile_picture
 
     db.session.delete(user)
     db.session.commit()
 
-    return make_response({"success": "Account deleted successfully"}), 200
+    remove_files(attachment_dir(), orphan_files)
+    if avatar:
+        remove_files(upload_root(), [avatar])
+    return jsonify({"success": "Account deleted successfully"}), 200
 
-# Invite a user to a workspace
+
+# ── Workspace: members ────────────────────────────────────────────────────────
+
+def _require_member(workspace_id):
+    """(user, workspace, error_response) — error_response is set if access is denied."""
+    user = current_user()
+    if not user:
+        return None, None, (jsonify({"error": "User not found"}), 404)
+    workspace = db.session.get(Workspace, workspace_id)
+    if not workspace or user.workspace_id != workspace.id:
+        # Same answer for "doesn't exist" and "not yours".
+        return None, None, (jsonify({"error": "Workspace not found"}), 404)
+    return user, workspace, None
+
+
+def _invite_expiry(invite):
+    ttl = LINK_INVITE_TTL if invite.status == "active" else EMAIL_INVITE_TTL
+    return (invite.created_at or utcnow_naive()) + ttl
+
+
+def _invite_is_live(invite):
+    return invite.status in ("pending", "active") and _invite_expiry(invite) > utcnow_naive()
+
+
+@user_bp.route("/workspace/<string:workspace_id>/members", methods=["GET"])
+@jwt_required()
+def get_workspace_members(workspace_id):
+    user, workspace, err = _require_member(workspace_id)
+    if err:
+        return err
+
+    members = User.query.filter_by(workspace_id=workspace.id).order_by(User.id).all()
+    member_emails = {m.email.lower() for m in members}
+    invites = WorkspaceInvite.query.filter_by(workspace_id=workspace.id, status="pending").all()
+    link = WorkspaceInvite.query.filter_by(workspace_id=workspace.id, status="active").first()
+
+    inviters = {u.id: u.username for u in User.query.filter(User.id.in_({i.invited_by for i in invites}))} if invites else {}
+    return jsonify({
+        "owner_id": workspace.owner_id,
+        "members": [
+            {"id": m.id, "username": m.username, "email": m.email, "is_owner": m.id == workspace.owner_id}
+            for m in members
+        ],
+        "pending_invites": [
+            {
+                "id": i.id,
+                "email": i.email,
+                "status": i.status,
+                "invited_by": inviters.get(i.invited_by, "unknown"),
+                "expires_at": _invite_expiry(i).isoformat() + "Z",
+            }
+            for i in invites
+            if _invite_is_live(i) and i.email.lower() not in member_emails
+        ],
+        "has_active_link": bool(link and _invite_is_live(link)),
+    }), 200
+
+
+def _start_fresh_workspace(user):
+    """Detach `user` from their workspace (leaving shared lists behind) and start a new one."""
+    if not hand_over_workspace(user):
+        # Alone in the workspace: nothing to leave behind, nothing to do.
+        return False
+    create_personal_workspace(user)
+    return True
+
+
+@user_bp.route("/workspace/<string:workspace_id>/leave", methods=["POST"])
+@jwt_required()
+def leave_workspace(workspace_id):
+    user, workspace, err = _require_member(workspace_id)
+    if err:
+        return err
+    if not other_members(user):
+        return jsonify({"error": "You are the only member of this workspace"}), 400
+
+    _start_fresh_workspace(user)
+    db.session.commit()
+    return jsonify({"message": "You left the workspace", "user": user_payload(user)}), 200
+
+
+@user_bp.route("/workspace/<string:workspace_id>/members/<int:member_id>", methods=["DELETE"])
+@jwt_required()
+def remove_member(workspace_id, member_id):
+    user, workspace, err = _require_member(workspace_id)
+    if err:
+        return err
+    if workspace.owner_id != user.id:
+        return jsonify({"error": "Only the workspace owner can remove members"}), 403
+    if member_id == user.id:
+        return jsonify({"error": "Use “Leave workspace” to remove yourself"}), 400
+
+    member = db.session.get(User, member_id)
+    if not member or member.workspace_id != workspace.id:
+        return jsonify({"error": "Member not found"}), 404
+
+    _start_fresh_workspace(member)
+    db.session.commit()
+    return jsonify({"message": "Member removed"}), 200
+
+
+# ── Workspace: invites ────────────────────────────────────────────────────────
+
+def _frontend_url():
+    return current_app.config["FRONTEND_URL"]
+
+
 @user_bp.route("/invite", methods=["POST"])
 @jwt_required()
 def invite_user():
-    data = request.get_json()
-    email = data.get("email")
-    workspace_id = data.get("workspace_id")  
+    data = json_body()
+    email = normalize_email(data.get("email"))
+    workspace_id = data.get("workspace_id")
 
     if not email or not workspace_id:
         return jsonify({"error": "Email and workspace_id are required"}), 400
+    err = validate_email(email)
+    if err:
+        return jsonify({"error": err}), 400
 
-    user_id = get_jwt_identity()
-    inviter = db.session.get(User, user_id)
+    inviter, workspace, denied = _require_member(workspace_id)
+    if denied:
+        return denied
 
-    if not inviter:
-        return jsonify({"error": "Invalid user"}), 404
+    if User.query.filter(db.func.lower(User.email) == email, User.workspace_id == workspace.id).first():
+        return jsonify({"error": "That person is already in this workspace"}), 400
 
-    workspace = db.session.get(Workspace, workspace_id)
-
-    if not workspace:
-        return jsonify({"error": "Workspace not found"}), 404
-
-    if inviter.workspace_id != workspace.id:
-        return jsonify({"error": "You are not a member of this workspace"}), 403
-    
-    existing_invite = WorkspaceInvite.query.filter_by(email=email, workspace_id=workspace.id).first()
-    if existing_invite and existing_invite.status == "pending":
+    existing = WorkspaceInvite.query.filter(
+        db.func.lower(WorkspaceInvite.email) == email,
+        WorkspaceInvite.workspace_id == workspace.id,
+        WorkspaceInvite.status == "pending",
+    ).first()
+    if existing and _invite_is_live(existing):
         return jsonify({"error": "Invite already sent"}), 400
+    if existing:
+        existing.status = "expired"
 
-    invite_token = secrets.token_urlsafe(32)
-    invite = WorkspaceInvite(email=email, workspace_id=workspace.id, invited_by=inviter.id, token=invite_token)
-    
+    invite = WorkspaceInvite(
+        email=email, workspace_id=workspace.id, invited_by=inviter.id,
+        token=secrets.token_urlsafe(32),
+    )
     db.session.add(invite)
     db.session.commit()
 
-    frontend_url = current_app.config.get("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
-    invite_url = f"{frontend_url}/invite/{invite_token}"
-
-    email_sent = False
-    email_error = None
+    invite_url = f"{_frontend_url()}/invite/{invite.token}"
+    email_sent, email_error = False, None
     try:
         from app import mail as app_mail
-        msg = Message("Teevexa Ordo – Workspace Invitation", recipients=[email])
+        msg = Message("Ordo – Workspace Invitation", recipients=[email])
         msg.body = (
-            f"You've been invited to join the '{workspace.name}' workspace on Teevexa Ordo.\n"
-            f"Click here to accept: {invite_url}\n\n"
-            "— The Teevexa Ordo Team"
+            f"{inviter.username} invited you to join the '{workspace.name}' workspace on Ordo.\n"
+            f"Click here to review and accept: {invite_url}\n"
+            "This invitation expires in 7 days.\n\n"
+            "— The Ordo Team"
         )
         app_mail.send(msg)
         email_sent = True
-    except Exception as e:
-        email_error = str(e)
-        current_app.logger.error("Email send failed: %s", e)
+    except Exception as e:  # noqa: BLE001
+        email_error = "The email could not be sent"
+        logger.error("invite_email_failed", error=str(e))
 
     return jsonify({
         "message": "Invite created successfully",
+        "id": invite.id,
         "email_sent": email_sent,
         "email_error": email_error,
         "invite_url": invite_url,
     }), 200
 
-# Accept an invite to a workspace
+
+@user_bp.route("/invite/<int:invite_id>", methods=["DELETE"])
+@jwt_required()
+def revoke_invite(invite_id):
+    user = current_user()
+    invite = db.session.get(WorkspaceInvite, invite_id)
+    if not user or not invite or invite.workspace_id != user.workspace_id:
+        return jsonify({"error": "Invite not found"}), 404
+    if not (invite.invited_by == user.id or is_workspace_owner(user)):
+        return jsonify({"error": "Only the inviter or the workspace owner can revoke an invite"}), 403
+
+    invite.status = "revoked"
+    db.session.commit()
+    return jsonify({"message": "Invite revoked"}), 200
+
+
+@user_bp.route("/invite/preview/<string:token>", methods=["GET"])
+def preview_invite(token):
+    """What the invite page shows before anyone commits to joining."""
+    invite = WorkspaceInvite.query.filter_by(token=token).first()
+    if not invite or not _invite_is_live(invite):
+        return jsonify({"error": "This invite link is invalid or has expired"}), 404
+    workspace = db.session.get(Workspace, invite.workspace_id)
+    inviter = db.session.get(User, invite.invited_by)
+    return jsonify({
+        "workspace_name": workspace.name if workspace else "a workspace",
+        "invited_by": inviter.username if inviter else None,
+        "member_count": User.query.filter_by(workspace_id=invite.workspace_id).count(),
+    }), 200
+
+
 @user_bp.route("/invite/accept/<string:token>", methods=["POST"])
 @jwt_required()
 def accept_invite(token):
-    # Accept both single-use email invites ("pending") and reusable link invites ("active")
     invite = WorkspaceInvite.query.filter(
         WorkspaceInvite.token == token,
         WorkspaceInvite.status.in_(["pending", "active"]),
     ).first()
-
-    if not invite:
+    if not invite or not _invite_is_live(invite):
         return jsonify({"error": "Invalid or expired invite"}), 404
 
-    user_id = int(get_jwt_identity())
-    user = db.session.get(User, user_id)
-
+    user = current_user()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    user.workspace_id = invite.workspace_id
-    # Single-use email invites are consumed; link invites stay active for others
+    if user.workspace_id != invite.workspace_id:
+        # Leave the old workspace's lists with its remaining members (if any).
+        hand_over_workspace(user)
+        user.workspace_id = invite.workspace_id
+
+    # Email invites are single-use; link invites stay open until they expire or are revoked.
     if invite.status == "pending":
         invite.status = "accepted"
-
-    # Clear any other pending email invite for this user in this workspace
-    stale = WorkspaceInvite.query.filter_by(
-        email=user.email,
-        workspace_id=invite.workspace_id,
-        status="pending",
-    ).first()
-    if stale and stale.id != invite.id:
-        stale.status = "accepted"
+    WorkspaceInvite.query.filter(
+        db.func.lower(WorkspaceInvite.email) == user.email.lower(),
+        WorkspaceInvite.workspace_id == invite.workspace_id,
+        WorkspaceInvite.status == "pending",
+    ).update({"status": "accepted"}, synchronize_session=False)
 
     db.session.commit()
-
     return jsonify({
         "message": "Joined workspace successfully!",
         "workspace_id": invite.workspace_id,
-    }), 200
-
-# Get workspace members
-@user_bp.route("/workspace/<string:workspace_id>/members", methods=["GET"])
-@jwt_required()
-def get_workspace_members(workspace_id):
-    workspace = db.session.get(Workspace, workspace_id)
-
-    if not workspace:
-        return jsonify({"error": "Workspace not found"}), 404
-
-    members = User.query.filter_by(workspace_id=workspace.id).all()
-    invites = WorkspaceInvite.query.filter_by(workspace_id=workspace.id, status="pending").all()
-
-    member_emails = {m.email for m in members}
-    return jsonify({
-        "members": [{"id": m.id, "username": m.username, "email": m.email} for m in members],
-        "pending_invites": [
-            {
-                "email": i.email,
-                "status": i.status,
-                "invited_by": (db.session.get(User, i.invited_by).username if i.invited_by else "unknown"),
-            }
-            for i in invites
-            # Hide invites whose email already belongs to a current member
-            if i.email not in member_emails
-        ]
+        "user": user_payload(user),
     }), 200
 
 
 @user_bp.route("/invite/generate-link", methods=["POST"])
 @jwt_required()
 def generate_invite_link():
-    data = request.get_json()
-    workspace_id = data.get("workspace_id")
-
+    workspace_id = json_body().get("workspace_id")
     if not workspace_id:
         return jsonify({"error": "workspace_id is required"}), 400
 
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
+    user, workspace, denied = _require_member(workspace_id)
+    if denied:
+        return denied
 
-    if not user or user.workspace_id != workspace_id:
-        return jsonify({"error": "Unauthorized to generate invite link"}), 403
-
-    workspace = db.session.get(Workspace, workspace_id)
-    if not workspace:
-        return jsonify({"error": "Workspace not found"}), 404
-
-    existing_invite = WorkspaceInvite.query.filter_by(workspace_id=workspace_id, status="active").first()
-
-    if existing_invite:
-        invite_token = existing_invite.token
-    else:
-        invite_token = secrets.token_urlsafe(32)
+    invite = WorkspaceInvite.query.filter_by(workspace_id=workspace.id, status="active").first()
+    if invite and not _invite_is_live(invite):
+        invite.status = "expired"
+        invite = None
+    if invite is None:
         invite = WorkspaceInvite(
-            email="link-invite",
-            workspace_id=workspace_id,
-            invited_by=int(get_jwt_identity()),
-            token=invite_token,
-            status="active",
+            email="link-invite", workspace_id=workspace.id, invited_by=user.id,
+            token=secrets.token_urlsafe(32), status="active",
         )
         db.session.add(invite)
         db.session.commit()
 
-    frontend_url = current_app.config.get("FRONTEND_URL", "https://teevexa-ordo.vercel.app")
-    invite_url = f"{frontend_url}/invite/{invite_token}"
-    return jsonify({"link": invite_url}), 200
+    return jsonify({
+        "link": f"{_frontend_url()}/invite/{invite.token}",
+        "expires_at": _invite_expiry(invite).isoformat() + "Z",
+    }), 200
+
+
+@user_bp.route("/invite/link", methods=["DELETE"])
+@jwt_required()
+def revoke_invite_link():
+    user = current_user()
+    if not user or not user.workspace_id:
+        return jsonify({"error": "Workspace not found"}), 404
+    WorkspaceInvite.query.filter_by(workspace_id=user.workspace_id, status="active").update(
+        {"status": "revoked"}, synchronize_session=False
+    )
+    db.session.commit()
+    return jsonify({"message": "Invite link revoked"}), 200

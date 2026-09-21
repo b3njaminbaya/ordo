@@ -66,3 +66,6 @@ gunicorn_error.log
 task/lib/
 task/lib/
 __pycache__/
+
+# User uploads (avatars, task attachments) — never commit
+uploads/

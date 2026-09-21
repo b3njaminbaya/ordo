@@ -15,27 +15,27 @@ const COMMITMENTS = [
   {
     Icon: Keyboard,
     title: "Keyboard Navigation",
-    body: "Every interactive element — buttons, forms, modals, dropdowns — is fully reachable and operable via keyboard alone. Tab, Shift+Tab, Enter, Space, and arrow keys work as expected throughout the interface.",
+    body: "Interactive elements are reachable by keyboard, dialogs keep focus inside and close with Escape, and board cards can be moved with the keyboard (Space to lift, arrow keys to move).",
   },
   {
     Icon: Monitor,
     title: "Screen Reader Support",
-    body: "We use semantic HTML5 elements and ARIA roles, labels, and live regions to ensure content is properly announced by assistive technologies including NVDA, JAWS, and VoiceOver on macOS and iOS.",
+    body: "We use semantic HTML and ARIA roles and labels so content can be announced by assistive technologies. We have not yet completed formal testing with NVDA, JAWS or VoiceOver.",
   },
   {
     Icon: Contrast,
     title: "Color Contrast",
-    body: "All text meets or exceeds WCAG 2.1 Level AA contrast ratios — 4.5:1 for body text and 3:1 for large text and UI components. We do not rely on color alone to convey information.",
+    body: "We design to WCAG 2.1 Level AA contrast ratios — 4.5:1 for body text and 3:1 for large text and UI components — and avoid relying on colour alone. A full contrast audit is still to be completed.",
   },
   {
     Icon: Type,
     title: "Text Resizing",
-    body: "The interface scales gracefully up to 200% zoom without content loss, horizontal scrolling, or broken layouts. We use relative units (rem/em) throughout so browser font-size preferences are respected.",
+    body: "We use relative units (rem/em) so browser font-size preferences are respected, and the layout is designed to scale up to 200% zoom.",
   },
   {
     Icon: MousePointer,
     title: "Focus Indicators",
-    body: "Visible focus rings are present on all interactive elements so keyboard and switch-access users can always tell where focus is. We never use outline: none without a custom focus style replacement.",
+    body: "Interactive elements show a visible focus indicator so keyboard and switch-access users can tell where focus is. We are auditing for any that are missing.",
   },
   {
     Icon: Layers,
@@ -45,10 +45,10 @@ const COMMITMENTS = [
 ];
 
 const STANDARDS = [
-  { label: "WCAG 2.1 Level AA", desc: "Our target conformance level" },
+  { label: "WCAG 2.1 Level AA", desc: "Our target conformance level (not yet formally audited)" },
   { label: "ARIA 1.2", desc: "Accessible Rich Internet Applications spec" },
-  { label: "Section 508", desc: "US federal accessibility requirements" },
-  { label: "EN 301 549", desc: "European accessibility standard" },
+  { label: "Section 508", desc: "Referenced for guidance" },
+  { label: "EN 301 549", desc: "Referenced for guidance" },
 ];
 
 const Accessibility = () => (
@@ -65,7 +65,7 @@ const Accessibility = () => (
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">Accessibility Statement</h1>
         <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
-          Teevexa Ordo is committed to being usable by everyone, regardless of ability or assistive technology.
+          Ordo is committed to being usable by everyone, regardless of ability or assistive technology.
         </p>
         <div className="flex items-center justify-center gap-4 mt-6 text-sm text-white/40">
           <span>Effective: May 2026</span>
@@ -116,9 +116,9 @@ const Accessibility = () => (
         <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">Known Limitations</p>
         <ul className="space-y-2">
           {[
-            "Drag-and-drop in the Kanban board currently requires a mouse; keyboard reordering is on our roadmap.",
-            "Some third-party embedded content may not meet our contrast standards.",
-            "PDF exports have not yet been tested with all screen readers.",
+            "Board drag-and-drop can be used from the keyboard (Space to lift, arrow keys to move), but its screen-reader announcements have not been tested.",
+            "Dashboard charts do not yet have data-table alternatives; the figures are also shown in the summary cards.",
+            "We have not yet had the application audited by an external accessibility specialist.",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2 text-sm text-text-muted">
               <ChevronRight size={14} className="text-primary mt-0.5 flex-shrink-0" />
@@ -137,12 +137,12 @@ const Accessibility = () => (
           <p className="text-sm font-semibold text-text">Found an accessibility barrier?</p>
           <p className="text-xs text-text-muted mt-0.5">
             Email us at{" "}
-            <a href="mailto:support@teevexa.com" className="text-primary hover:underline">support@teevexa.com</a>{" "}
+            <a href="mailto:b3njaminbaya@gmail.com" className="text-primary hover:underline">b3njaminbaya@gmail.com</a>{" "}
             with the page URL and a description of the issue. We aim to respond within 5 business days.
           </p>
         </div>
         <a
-          href="mailto:support@teevexa.com"
+          href="mailto:b3njaminbaya@gmail.com"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <Mail size={14} /> Report Issue
