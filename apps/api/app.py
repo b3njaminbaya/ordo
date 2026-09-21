@@ -61,8 +61,11 @@ _proxies = int(os.getenv("TRUSTED_PROXY_COUNT", "1" if _IS_PROD else "0") or 0)
 if _proxies:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_proxies, x_proto=_proxies, x_host=_proxies)
 
-_frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-ALLOWED_ORIGINS = [_frontend_url] if _IS_PROD else list({_frontend_url, "http://localhost:5173"})
+# FRONTEND_URL may list several origins separated by commas (e.g. a site reachable on more than
+# one domain). The first is the canonical one used in emailed links.
+_frontend_urls = [u.strip().rstrip("/") for u in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",") if u.strip()]
+_frontend_url = _frontend_urls[0]
+ALLOWED_ORIGINS = list(_frontend_urls) if _IS_PROD else list({*_frontend_urls, "http://localhost:5173"})
 
 CORS(
     app,
