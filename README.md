@@ -1,8 +1,12 @@
 # Ordo
 
-A full-stack project management app — tasks, Kanban, calendar, time tracking and real-time team collaboration — designed and built by **Benjamin Baya**.
+A full-stack project management app — tasks, Kanban, calendar, time tracking and real-time team collaboration — designed and directed by **Benjamin Baya** and built with AI assistance ([Claude Code](https://claude.com/claude-code)).
 
-This is a personal portfolio project. It shows how I design, build, secure and test a multi-user web application end to end: a React front end, a Flask API with WebSockets, a PostgreSQL schema with migrations, and CI.
+This is a personal portfolio project. It shows how I specify, review, secure, test and deploy a multi-user web application end to end: a React front end, a Flask API with WebSockets, a PostgreSQL schema with migrations, and CI.
+
+## How this was built
+
+I set the requirements, audited the code, decided what to fix and how the product should behave, and reviewed, tested and deployed the result. Claude Code (an AI coding assistant) wrote much of the code under my direction; the commits it contributed to carry a `Co-Authored-By` trailer, so the history shows exactly where. I'm upfront about this because what I'm demonstrating is engineering judgment and the ability to ship and stand behind a system, not typing speed.
 
 **Author:** Benjamin Baya · [b3njaminbaya@gmail.com](mailto:b3njaminbaya@gmail.com) · [GitHub @b3njaminbaya](https://github.com/b3njaminbaya)
 

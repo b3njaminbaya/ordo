@@ -26,7 +26,7 @@ const Footer = () => (
           </Link>
           <p className="text-sm text-white/60 leading-relaxed max-w-xs">
             A project management app — tasks, Kanban, calendar, time tracking and real-time collaboration —
-            built by Benjamin Baya as a portfolio project.
+            designed by Benjamin Baya and built with AI assistance (Claude Code) as a portfolio project.
           </p>
           <div className="flex items-center gap-2 mt-6">
             <a

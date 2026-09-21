@@ -24,7 +24,7 @@ const FEATURES = [
 const WHY = [
   { Icon: Database, title: "Runs on your own server",   desc: "Ordo is a standard Flask + React app with a PostgreSQL database. Deploy it anywhere you can run Python and Node — your data stays where you host it." },
   { Icon: Lock,     title: "Security taken seriously",  desc: "Every request is scoped to your workspace, sessions are revocable, and real-time connections are authenticated. The API has a large automated test suite." },
-  { Icon: Server,   title: "Built end to end",          desc: "One person designed and built the whole stack: data model, API, WebSockets, background jobs, UI, tests and CI." },
+  { Icon: Server,   title: "Built end to end",          desc: "Designed and directed by Benjamin Baya and built with AI assistance (Claude Code), covering the data model, API, WebSockets, background jobs, UI, tests and CI." },
 ];
 
 const HOW_IT_WORKS = [
