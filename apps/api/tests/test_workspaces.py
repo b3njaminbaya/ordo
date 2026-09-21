@@ -155,3 +155,9 @@ class TestMembership:
         make_task(client, h, make_list(client, h, "Mine"))
         client.delete("/users/deleteaccount", json={"password": "pass1234"}, headers=h)
         assert TaskList.query.count() == 0
+        assert Workspace.query.count() == 0       # no empty workspace left behind
+
+    def test_deleting_one_of_two_members_keeps_the_workspace(self, client):
+        a, b = team(client)
+        client.delete("/users/deleteaccount", json={"password": "pass1234"}, headers=b)
+        assert Workspace.query.count() == 1

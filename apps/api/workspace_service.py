@@ -5,7 +5,7 @@ leaves (or is removed, or deletes their account) and other members remain, their
 lists stay behind with the workspace's owner. If they were the only member, the
 lists simply go with them.
 """
-from models import db, TaskAssignment, TaskList, User, Workspace
+from models import db, TaskAssignment, TaskList, User, Workspace, WorkspaceInvite
 
 
 def other_members(user):
@@ -37,3 +37,15 @@ def hand_over_workspace(user):
     TaskAssignment.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     db.session.expire(user, ["tasklists", "tasks_assigned"])
     return True
+
+
+def prune_if_empty(workspace_id):
+    """Delete a workspace (and its invites) once its last member has gone. Caller commits."""
+    if not workspace_id:
+        return
+    db.session.flush()
+    if User.query.filter_by(workspace_id=workspace_id).count() == 0:
+        WorkspaceInvite.query.filter_by(workspace_id=workspace_id).delete(synchronize_session=False)
+        workspace = db.session.get(Workspace, workspace_id)
+        if workspace is not None:
+            db.session.delete(workspace)

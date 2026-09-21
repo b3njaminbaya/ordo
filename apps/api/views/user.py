@@ -23,7 +23,7 @@ from validation import (
     json_body, normalize_email, utcnow_naive, validate_email, validate_password, validate_username,
 )
 from views.auth import create_personal_workspace, issue_tokens, user_payload
-from workspace_service import hand_over_workspace, other_members
+from workspace_service import hand_over_workspace, other_members, prune_if_empty
 
 logger = structlog.get_logger()
 user_bp = Blueprint("user_bp", __name__)
@@ -214,8 +214,10 @@ def delete_user():
     if not kept:
         orphan_files = attachment_filenames_for_lists([tl.id for tl in TaskList.query.filter_by(user_id=user.id)])
     avatar = user.profile_picture
+    old_workspace_id = user.workspace_id
 
     db.session.delete(user)
+    prune_if_empty(old_workspace_id)     # nobody left in it → don't leave a stray row
     db.session.commit()
 
     remove_files(attachment_dir(), orphan_files)
@@ -439,8 +441,10 @@ def accept_invite(token):
 
     if user.workspace_id != invite.workspace_id:
         # Leave the old workspace's lists with its remaining members (if any).
+        old_workspace_id = user.workspace_id
         hand_over_workspace(user)
         user.workspace_id = invite.workspace_id
+        prune_if_empty(old_workspace_id)   # their personal workspace is now empty
 
     # Email invites are single-use; link invites stay open until they expire or are revoked.
     if invite.status == "pending":

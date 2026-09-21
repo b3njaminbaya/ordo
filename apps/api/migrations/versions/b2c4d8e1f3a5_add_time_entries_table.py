@@ -17,7 +17,9 @@ depends_on = None
 time_category = postgresql.ENUM(
     'focus', 'meeting', 'review', 'other',
     name='time_category',
-    create_type=True,
+    # The type is created explicitly (checkfirst) in upgrade(); letting create_table
+    # create it again fails with "type already exists" on a fresh database.
+    create_type=False,
 )
 
 
