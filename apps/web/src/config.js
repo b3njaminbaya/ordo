@@ -5,7 +5,8 @@
 // fall back to the author's hosted demo API for other domains — that would silently
 // send a customer's data to our servers.
 const DEMO_API_BY_HOST = {
-  "teevexa-ordo.vercel.app": "https://teevexa-ordo-api.onrender.com",
+  "ordo-inky.vercel.app": "https://ordo-api-30dh.onrender.com",
+  "ordo-benjaminbaya.vercel.app": "https://ordo-api-30dh.onrender.com",
 };
 
 function resolveApiBase() {

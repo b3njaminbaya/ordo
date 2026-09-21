@@ -10,6 +10,8 @@ This is a personal portfolio project. It shows how I design, build, secure and t
 
 ## Live demo
 
+**Try it: [ordo-inky.vercel.app](https://ordo-inky.vercel.app)** (front end on Vercel, API on Render, database on Neon).
+
 The demo runs on free-tier hosting, so please keep these in mind:
 
 - **The first request can take up to a minute** while the server wakes up after a quiet period.
